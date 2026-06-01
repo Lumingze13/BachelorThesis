@@ -1,5 +1,5 @@
 /*
- * Horizon backend — thin gateway in front of the Anthropic Claude API.
+ * Thesis backend — thin gateway in front of the Anthropic Claude API.
  *
  * Serves the static frontend AND the chat API from the same origin, so the
  * browser uses relative /api/... paths and the API key never reaches the client.
@@ -152,5 +152,5 @@ app.listen(PORT, () => {
   if (!process.env.ANTHROPIC_API_KEY) {
     console.warn('⚠  ANTHROPIC_API_KEY is not set — API calls will fail. Add it to .env');
   }
-  console.log(`Horizon running at http://localhost:${PORT}`);
+  console.log(`Thesis running at http://localhost:${PORT}`);
 });

@@ -31,9 +31,9 @@ function splitParas(text) {
 }
 
 // When the frontend is hosted separately (Vercel) from the API (Railway),
-// window.HORIZON_API_BASE (set in config.js) points at the backend origin.
+// window.THESIS_API_BASE (set in config.js) points at the backend origin.
 // Empty string keeps relative paths so same-origin / local dev still works.
-const API_BASE = (typeof window !== 'undefined' && window.HORIZON_API_BASE) || '';
+const API_BASE = (typeof window !== 'undefined' && window.THESIS_API_BASE) || '';
 
 async function postJSON(url, body) {
   const res = await fetch(API_BASE + url, {
@@ -158,7 +158,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
   return (
     <div className="chat-app" data-screen-label="04 Chat">
       <aside className="chat-side">
-        <div className="brand"><BrandMark size={20}/><span>Horizon</span></div>
+        <div className="brand"><BrandMark size={20}/><span>Thesis</span></div>
 
         <div style={{padding: '0 4px'}}>
           <button className="btn ghost sm" style={{width: '100%', justifyContent: 'flex-start'}} onClick={onExit}>

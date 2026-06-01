@@ -339,7 +339,7 @@ function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow }) {
     <div className="flow">
       <div className="flow-progress"><div className="bar" style={{ width: `${((page + 1) / sections.length) * 100}%` }} /></div>
       <nav className="topnav">
-        <div className="brand"><BrandMark size={22} /><span>Horizon</span></div>
+        <div className="brand"><BrandMark size={22} /><span>Thesis</span></div>
         <div className="sv-eyebrow">{eyebrow}</div>
         <div className="end" />
       </nav>

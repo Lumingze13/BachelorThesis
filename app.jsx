@@ -86,7 +86,7 @@ function App() {
         <div className="flow">
           <div className="flow-progress"><div className="bar" style={{ width: '8%' }} /></div>
           <nav className="topnav">
-            <div className="brand"><BrandMark size={22} /><span>Horizon</span></div>
+            <div className="brand"><BrandMark size={22} /><span>Thesis</span></div>
             <div className="sv-eyebrow">Step 01 · Set up</div>
             <div className="end"><button className="btn ghost sm" onClick={() => setScreen('landing')}>Exit</button></div>
           </nav>
@@ -144,7 +144,7 @@ function App() {
           onRestart={restart} />
       )}
 
-      <HorizonTweaks tweaks={tweaks} setTweak={setTweak} />
+      <ThesisTweaks tweaks={tweaks} setTweak={setTweak} />
     </div>
   );
 }
@@ -156,14 +156,14 @@ function Closure({ study, onRestart }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    a.href = url; a.download = `horizon-session-${study.meta.condition}-${stamp}.json`;
+    a.href = url; a.download = `thesis-session-${study.meta.condition}-${stamp}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   };
   return (
     <div className="flow">
       <nav className="topnav">
-        <div className="brand"><BrandMark size={22} /><span>Horizon</span></div>
+        <div className="brand"><BrandMark size={22} /><span>Thesis</span></div>
         <div className="end" />
       </nav>
       <div className="flow-body">
@@ -214,7 +214,7 @@ function hexToRgb(h) { const v = h.replace('#', ''); return { r: parseInt(v.slic
 function rgbToHex(r, g, b) { return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join(''); }
 
 /* Tweaks panel */
-function HorizonTweaks({ tweaks, setTweak }) {
+function ThesisTweaks({ tweaks, setTweak }) {
   return (
     <TweaksPanel title="Tweaks">
       <TweakSection label="Appearance">

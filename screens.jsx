@@ -8,7 +8,7 @@ function Landing({ onBegin }) {
   return (
     <div data-screen-label="01 Landing">
       <nav className="topnav">
-        <div className="brand"><BrandMark size={22}/><span>Horizon</span></div>
+        <div className="brand"><BrandMark size={22}/><span>Thesis</span></div>
         <div className="nav-links">
           <a href="#how">How it works</a>
           <a href="#about">About the study</a>
@@ -24,7 +24,7 @@ function Landing({ onBegin }) {
           Talk to <em>you</em>,<br/>ten years into a career.
         </h1>
         <p className="hero-sub">
-          Horizon lets Economics &amp; Business students step into a vivid role-play
+          Thesis lets Economics &amp; Business students step into a vivid role-play
           with a version of themselves a decade from now — already working in a career
           they're curious about. Not to be told what to do, but to feel what that
           future might actually be like.
@@ -71,7 +71,7 @@ function Landing({ onBegin }) {
       </section>
 
       <div className="fineprint" id="about">
-        <div className="left"><BrandMark size={14}/><span>Horizon · BSc Business Analytics thesis prototype · UvA 2026</span></div>
+        <div className="left"><BrandMark size={14}/><span>Thesis · BSc Business Analytics prototype · UvA 2026</span></div>
         <div>Grounded in Identity-Based Motivation (Oyserman) &amp; Future Self-Continuity (Hershfield)</div>
       </div>
     </div>
@@ -232,7 +232,7 @@ function Consent({ onAgree, onBack }) {
   return (
     <div className="flow">
       <nav className="topnav">
-        <div className="brand"><BrandMark size={22} /><span>Horizon</span></div>
+        <div className="brand"><BrandMark size={22} /><span>Thesis</span></div>
         <div className="end"><button className="btn ghost sm" onClick={onBack}>Exit</button></div>
       </nav>
       <div className="flow-body">

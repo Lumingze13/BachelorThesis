@@ -78,7 +78,7 @@ function PhaseB({ profileData, onDone, onBack }) {
     <div className="flow">
       <div className="flow-progress"><div className="bar" style={{ width: '55%' }} /></div>
       <nav className="topnav">
-        <div className="brand"><BrandMark size={22} /><span>Horizon</span></div>
+        <div className="brand"><BrandMark size={22} /><span>Thesis</span></div>
         <div className="sv-eyebrow">Step 03 · Find a direction</div>
         <div className="end"><button className="btn ghost sm" onClick={onBack}>Back</button></div>
       </nav>

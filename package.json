@@ -1,7 +1,7 @@
 {
-  "name": "horizon",
+  "name": "thesis",
   "version": "1.0.0",
-  "description": "Horizon — future-self career chatbot (phase-c role-play backend + frontend)",
+  "description": "Thesis — future-self career chatbot (phase-c role-play backend + frontend)",
   "type": "module",
   "scripts": {
     "start": "node server.js",
