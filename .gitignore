@@ -1,0 +1,5 @@
+node_modules/
+.env
+
+# Personal context brief — excluded from the repo
+Gleb_Thesis_Context_Brief.pdf

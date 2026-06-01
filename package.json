@@ -1,0 +1,22 @@
+{
+  "name": "horizon",
+  "version": "1.0.0",
+  "description": "Horizon — future-self career chatbot (phase-c role-play backend + frontend)",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/flow_test.cjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/preset-react": "^7.29.7",
+    "jsdom": "^29.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
