@@ -1,0 +1,9 @@
+node_modules
+.git
+.env
+.claude
+**/__pycache__
+*.pyc
+.pytest_cache
+eval_pipeline/out
+Gleb_Thesis_Context_Brief.pdf
