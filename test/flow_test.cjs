@@ -28,14 +28,18 @@ window.scrollTo = () => {};
 window.URL.createObjectURL = () => 'blob:stub';
 window.URL.revokeObjectURL = () => {};
 let fetchCalls = [];
+let patchBodies = [];
 window.fetch = async (url, opts) => {
   fetchCalls.push(url);
+  const method = (opts && opts.method) || 'GET';
   const body = opts && opts.body ? JSON.parse(opts.body) : {};
   let data = {};
   if (url.endsWith('/api/phase-b/session')) data = { sessionId: 'pb1', opening: 'Welcome! What in your studies genuinely pulls you in?' };
   else if (url.endsWith('/api/phase-c/session')) data = { sessionId: 'pc1', opening: "Hey — it's me, you in ten years.\n\nWhat's on your mind?" };
   else if (url.endsWith('/api/chat')) data = { reply: 'Here is a grounded reply.\n\nWhat else?' };
   else if (url.endsWith('/api/regenerate')) data = { reply: 'A rephrased reply.' };
+  else if (url.endsWith('/api/sessions') && method === 'POST') data = { id: 'sess-test', condition: 'main', persisted: true };
+  else if (/\/api\/sessions\//.test(url) && method === 'PATCH') { patchBodies.push(body); data = { ok: true, status: 'in_progress', persisted: true }; }
   return { ok: true, status: 200, json: async () => data };
 };
 
@@ -150,6 +154,16 @@ const ok = (msg) => console.log('✓ ' + msg);
     if (!hit(u)) fail(`expected fetch to ${u}`);
   });
   ok('All expected endpoints were called: ' + [...new Set(fetchCalls.map((c) => c.replace(/^https?:\/\/[^/]+/, '')))].join(', '));
+
+  // Persistence coverage (additive — must not change the flow above)
+  if (!fetchCalls.some((c) => c.endsWith('/api/sessions'))) fail('expected POST /api/sessions (session create)');
+  if (!patchBodies.some((b) => b.preSurvey)) fail('expected a PATCH carrying preSurvey');
+  if (!patchBodies.some((b) => b.phaseB)) fail('expected a PATCH carrying phaseB');
+  if (!patchBodies.some((b) => b.phaseC)) fail('expected a PATCH carrying phaseC');
+  const finalize = patchBodies.find((b) => b.finalize === true);
+  if (!finalize) fail('expected a finalize PATCH at closure');
+  if (!finalize.postSurvey) fail('finalize PATCH missing postSurvey');
+  ok('Persistence saves fired: create + preSurvey + phaseB + phaseC + finalize(postSurvey)');
 
   console.log('\nALL FLOW STEPS PASSED ✅');
   process.exit(process.exitCode || 0);

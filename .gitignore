@@ -1,5 +1,15 @@
 node_modules/
 .env
 
+# Claude Code local session state
+.claude/
+
 # Personal context brief — excluded from the repo
 Gleb_Thesis_Context_Brief.pdf
+
+# Python / eval-pipeline artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+pytest-cache-files-*
+eval_pipeline/out/

@@ -8,7 +8,7 @@
  * Everything is held in React state; nothing is persisted (no DB). The full
  * session record can be downloaded as JSON on the closure screen.
  */
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 const DEFAULT_TWEAKS = /*EDITMODE-BEGIN*/{
   "theme": "light",
@@ -23,6 +23,35 @@ function readCondition() {
     const c = new URLSearchParams(window.location.search).get('condition');
     return c === 'baseline' ? 'baseline' : 'main';
   } catch (e) { return 'main'; }
+}
+
+// --- Persistence (additive; never blocks or alters the participant UX) ------
+// The study session is saved to Postgres via the backend. All calls are
+// best-effort: any failure (offline / no DB) is swallowed so the flow is
+// identical to before, and the JSON download at Closure still works.
+const PERSIST_BASE = (typeof window !== 'undefined' && window.THESIS_API_BASE) || '';
+
+function readSessionParam() {
+  try { return new URLSearchParams(window.location.search).get('session'); } catch (e) { return null; }
+}
+
+async function apiCreateSession(condition) {
+  try {
+    const r = await fetch(PERSIST_BASE + '/api/sessions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ condition }),
+    });
+    const d = await r.json().catch(() => ({}));
+    return d && d.id ? d.id : null;
+  } catch (e) { return null; }
+}
+
+function apiSaveSession(id, partial) {
+  if (!id) return Promise.resolve();
+  return fetch(PERSIST_BASE + '/api/sessions/' + id, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(partial),
+  }).catch(() => {});
 }
 
 /** Condense the Phase-B dialogue into carry-over notes for the MAIN role-play. */
@@ -58,6 +87,14 @@ function App() {
   }, [tweaks]);
 
   useEffect(() => { setProfile(p => ({ ...p, color: tweaks.accent })); }, [tweaks.accent]);
+
+  // Establish (or adopt) a persistent study session id for this run.
+  const studyId = useRef(null);
+  useEffect(() => {
+    const existing = readSessionParam();
+    if (existing) { studyId.current = existing; return; } // admin-created participant link
+    apiCreateSession(condition).then((id) => { studyId.current = id; });
+  }, []); // once
 
   const setPre = (id, v) => setPreAnswers(prev => ({ ...prev, [id]: v }));
   const setPost = (id, v) => setPostAnswers(prev => ({ ...prev, [id]: v }));
@@ -109,25 +146,36 @@ function App() {
 
       {screen === 'presurvey' && (
         <PreSurvey answers={preAnswers} onChange={setPre}
-          onDone={() => setScreen('phaseb')} onBack={() => setScreen('avatar')} />
+          onDone={() => {
+            apiSaveSession(studyId.current, {
+              profile,
+              preSurvey: preAnswers,
+              scores: { bigFive: baseProfile.bigFive, riasec: baseProfile.riasec, values: baseProfile.values },
+            });
+            setScreen('phaseb');
+          }}
+          onBack={() => setScreen('avatar')} />
       )}
 
       {screen === 'phaseb' && (
         <PhaseB profileData={baseProfile}
-          onDone={(pb) => { setPhaseB(pb); setScreen('roleplay'); }}
+          onDone={(pb) => { setPhaseB(pb); apiSaveSession(studyId.current, { phaseB: pb }); setScreen('roleplay'); }}
           onBack={() => setScreen('presurvey')} />
       )}
 
       {screen === 'roleplay' && (
         <Chat profile={profile} condition={condition} profileData={fullProfile}
           phaseBNotes={phaseBNotesFrom(phaseB)} career={phaseB && phaseB.career}
-          onComplete={(pc) => { setPhaseC(pc); setScreen('postsurvey'); }}
+          onComplete={(pc) => { setPhaseC(pc); apiSaveSession(studyId.current, { phaseC: pc }); setScreen('postsurvey'); }}
           onExit={restart} />
       )}
 
       {screen === 'postsurvey' && (
         <PostSurvey answers={postAnswers} onChange={setPost} career={phaseB && phaseB.career}
-          onDone={() => setScreen('done')} />
+          onDone={() => {
+            apiSaveSession(studyId.current, { postSurvey: postAnswers, version: '3.0', finalize: true });
+            setScreen('done');
+          }} />
       )}
 
       {screen === 'done' && (

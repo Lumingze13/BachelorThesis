@@ -13,14 +13,16 @@
  *   Phase C — role-play. MAIN = full design (Appendix C); BASELINE = career only (Appendix D)
  */
 
-import dotenv from 'dotenv';
-dotenv.config({ override: true }); // .env wins over any stale shell ANTHROPIC_API_KEY
+import './lib/env.js'; // MUST be first: loads .env before any module reads process.env
 import express from 'express';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import { buildPhaseBPrompt, buildSystemPrompt, buildBaselinePrompt } from './lib/prompt.js';
+import { dbEnabled, initSchema } from './lib/db.js';
+import { mountStudyRoutes } from './lib/study_routes.js';
+import { mountAdminRoutes } from './lib/admin_routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -143,14 +145,45 @@ app.post('/api/regenerate', async (req, res) => {
   }
 });
 
+// --- Study platform: persistence + admin (additive) -----------------------
+// Mounted before the static handler so /admin and /api/* take precedence.
+mountStudyRoutes(app);
+mountAdminRoutes(app);
+
 // --- Static frontend ------------------------------------------------------
+// Block server source, libs, DB schema, eval internals, tests, and the admin
+// HTML (served only via the gated /admin route) from being served statically.
+const STATIC_DENY = /^\/(lib|db|test|node_modules|eval_pipeline)(\/|$)/;
+app.use((req, res, next) => {
+  if (STATIC_DENY.test(req.path)) return res.status(404).end();
+  if (req.path === '/admin/index.html' || req.path === '/admin/login.html') return res.status(404).end();
+  next();
+});
 
 app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.warn('⚠  ANTHROPIC_API_KEY is not set — API calls will fail. Add it to .env');
+
+async function boot() {
+  if (dbEnabled) {
+    try {
+      await initSchema();
+      console.log('DB schema ready (persistence ON).');
+    } catch (err) {
+      console.error('⚠  DB schema init failed — running WITHOUT persistence:', err?.message || err);
+    }
+  } else {
+    console.warn('⚠  DATABASE_URL not set — sessions are in-memory only (no persistence).');
   }
-  console.log(`Thesis running at http://localhost:${PORT}`);
-});
+  app.listen(PORT, () => {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.warn('⚠  ANTHROPIC_API_KEY is not set — API calls will fail. Add it to .env');
+    }
+    if (!process.env.ADMIN_TOKEN) {
+      console.warn('⚠  ADMIN_TOKEN is not set — the /admin dashboard is disabled.');
+    }
+    console.log(`Thesis running at http://localhost:${PORT}`);
+  });
+}
+
+boot();

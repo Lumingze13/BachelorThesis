@@ -1,0 +1,3 @@
+# Root requirements so Railway's builder (Railpack/Nixpacks) detects Python and
+# installs the eval-pipeline deps alongside the Node app on one service.
+-r eval_pipeline/requirements.txt

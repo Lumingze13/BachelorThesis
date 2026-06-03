@@ -1,0 +1,8 @@
+# Python runtime deps for the evaluation pipeline (offline mode needs only these).
+numpy>=1.26
+scipy>=1.11
+matplotlib>=3.8
+scikit-learn>=1.3   # cohen_kappa_score (QWK) in metrics.py
+anthropic>=0.40     # RealLLMClaude — required: the eval judge now defaults to real claude-sonnet-4-6
+# Optional, only for embedding-based SSR:
+#   sentence-transformers # SentenceTransformerEmbedder

@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node test/flow_test.cjs"
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "test": "node test/flow_test.cjs && node test/reconstruct_test.mjs && node test/admin_gate_test.mjs && node test/db_test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "pg": "^8.21.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

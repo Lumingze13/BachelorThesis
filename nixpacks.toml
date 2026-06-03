@@ -1,0 +1,19 @@
+# nixpacks.toml — single Railway service running BOTH Node and Python.
+#
+# The Node server (server.js) spawns the Python eval pipeline via child_process,
+# so both runtimes must live in the same container. (A separate Python worker
+# would need a job queue + shared DB writer; we keep one service for simplicity
+# at this study's scale.) Used when the Railway service's builder is Nixpacks;
+# with the default Railpack builder, the root requirements.txt + package.json are
+# auto-detected and this file is ignored.
+providers = ["node", "python"]
+
+[phases.install]
+cmds = [
+  "npm ci",
+  "python3 -m pip install --upgrade pip",
+  "python3 -m pip install -r eval_pipeline/requirements.txt",
+]
+
+[start]
+cmd = "node server.js"
