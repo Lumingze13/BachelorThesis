@@ -24,10 +24,21 @@ function PhaseB({ profileData, onDone, onBack }) {
   const [interest, setInterest] = useState(undefined);
   const sessionId = useRef(null);
   const scrollRef = useRef(null);
+  const lockRef = useRef(null);
 
   useEffect(() => {
     const el = scrollRef.current; if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending, booting, showLock]);
+
+  // Bring the lock-in card into view once it appears.
+  useEffect(() => {
+    if (showLock && lockRef.current && lockRef.current.scrollIntoView) {
+      lockRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [showLock]);
+
+  const guideTurns = messages.filter((m) => m.role === 'guide').length;
+  const hasRecs = messages.some((m) => m.recommendations && m.recommendations.length);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +64,9 @@ function PhaseB({ profileData, onDone, onBack }) {
     try {
       const { reply, recommendations } = await postJSON('/api/chat', { sessionId: sessionId.current, message: t });
       setMessages((p) => [...p, { role: 'guide', paras: splitParas(reply), recommendations: recommendations || null, id: `g${Date.now()}` }]);
-      setShowLock(true); // once the guide has replied at least once, allow locking in
+      // Only reveal the lock-in once the guide has actually proposed directions —
+      // not after the first question (which felt premature in testing).
+      if (recommendations && recommendations.length) setShowLock(true);
     } catch (e) {
       setError(e.message || 'Something went wrong. Please try again.');
     } finally { setPending(false); }
@@ -103,7 +116,7 @@ function PhaseB({ profileData, onDone, onBack }) {
                   <div className="avatar">{m.role === 'user' ? 'You' : <BrandMark size={20} />}</div>
                   <div style={{ minWidth: 0, flex: m.role === 'user' ? 'unset' : 1 }}>
                     <div className="bubble">
-                      {m.role === 'guide' ? m.paras.map((p, i) => <p key={i}>{p}</p>) : m.text}
+                      {m.role === 'guide' ? m.paras.map((p, i) => <p key={i}>{renderRich(p)}</p>) : m.text}
                     </div>
                     {m.recommendations && m.recommendations.length > 0 && (
                       <div className="rec-grid">
@@ -130,11 +143,21 @@ function PhaseB({ profileData, onDone, onBack }) {
             </div>
           </div>
 
+          {/* Fallback: if the guide has talked a while but no cards parsed, let the
+              student open the chooser themselves rather than be stuck. */}
+          {!showLock && !pending && guideTurns >= 3 && !hasRecs && (
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <button className="link-btn" style={{ margin: 0 }} onClick={() => setShowLock(true)}>
+                I'm ready to choose my career →
+              </button>
+            </div>
+          )}
+
           {showLock && (
-            <div className="pb-lock fade-in">
-              <div className="pb-lock-h">Ready to step into one?</div>
+            <div className="pb-lock fade-in" ref={lockRef}>
+              <div className="pb-lock-h">{career.trim() ? `Step into life as a ${career.trim()}?` : 'Ready to step into one?'}</div>
               <p className="sv-intro" style={{ margin: '0 0 12px' }}>
-                Pick the career you're most curious to experience as your future self. You can explore others later.
+                {hasRecs ? 'Tap a card above to choose, or type your own. ' : ''}Pick the career you're most curious to experience as your future self — you can explore others later.
               </p>
               <input className="sv-input" placeholder="The career you choose — e.g. Data analyst"
                 value={career} onChange={(e) => setCareer(e.target.value)} />
@@ -148,6 +171,11 @@ function PhaseB({ profileData, onDone, onBack }) {
                 Step into this future
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
+              {!canLock && (
+                <p className="sv-hint" style={{ marginTop: 8 }}>
+                  {!career.trim() ? 'Choose or type a career' : !familiarity ? 'Rate how familiar it feels' : 'Rate your interest'} to continue.
+                </p>
+              )}
             </div>
           )}
         </div>

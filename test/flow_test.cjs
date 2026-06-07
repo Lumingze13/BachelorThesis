@@ -36,7 +36,7 @@ window.fetch = async (url, opts) => {
   let data = {};
   if (url.endsWith('/api/phase-b/session')) data = { sessionId: 'pb1', opening: 'Welcome! What in your studies genuinely pulls you in?' };
   else if (url.endsWith('/api/phase-c/session')) data = { sessionId: 'pc1', opening: "Hey — it's me, you in ten years.\n\nWhat's on your mind?" };
-  else if (url.endsWith('/api/chat')) data = { reply: 'Here is a grounded reply.\n\nWhat else?' };
+  else if (url.endsWith('/api/chat')) data = { reply: 'Here is a grounded reply.\n\nWhat else?', recommendations: [{ title: 'Data analyst', why: 'You like turning data into stories.', path: 'SQL plus an internship.' }, { title: 'Product manager', why: 'You organise people well.', path: 'APM programmes.' }] };
   else if (url.endsWith('/api/regenerate')) data = { reply: 'A rephrased reply.' };
   else if (url.endsWith('/api/sessions') && method === 'POST') data = { id: 'sess-test', condition: 'main', persisted: true };
   else if (/\/api\/sessions\//.test(url) && method === 'PATCH') { patchBodies.push(body); data = { ok: true, status: 'in_progress', persisted: true }; }
@@ -116,13 +116,17 @@ const ok = (msg) => console.log('✓ ' + msg);
   const pbComposer = window.document.querySelector('.pb-composer textarea');
   setInput(pbComposer, 'I like turning messy data into clear stories.'); await tick();
   click(window.document.querySelector('.pb-composer .send')); await tick(80);
-  if (!window.document.querySelector('.pb-lock')) fail('Phase B lock panel did not appear after reply');
-  setInput(window.document.querySelector('.pb-lock .sv-input'), 'Data analyst'); await tick();
+  // Recommendation cards render, and selecting one reveals the lock-in + fills the choice.
+  const cards = $('.rec-card');
+  if (!cards.length) fail('Phase B recommendation cards did not render');
+  click(cards[0]); await tick();
+  if (!window.document.querySelector('.pb-lock')) fail('Phase B lock panel did not appear after choosing a card');
+  if (window.document.querySelector('.pb-lock .sv-input').value !== 'Data analyst') fail('Card click did not fill the career choice');
   $('.pb-lock .sv-scale').forEach((s) => { const pts = s.querySelectorAll('.sv-pt'); click(pts[pts.length - 1]); }); await tick();
   const stepBtn = byText('Step into this future');
   if (stepBtn.disabled) fail('Phase B lock button stayed disabled');
   click(stepBtn); await tick(80);
-  ok('Phase B completed (career locked: Data analyst)');
+  ok('Phase B completed (card selected + career locked: Data analyst)');
 
   // 6. Phase C role-play
   if (!window.document.querySelector('.chat-app')) fail('Phase C chat did not render');

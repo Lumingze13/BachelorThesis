@@ -30,11 +30,21 @@ const BFI10 = [
 ];
 const BFI_SCALE = { points: 5, left: 'Disagree strongly', right: 'Agree strongly' };
 
-const WORK_VALUES = [
-  'Achievement', 'Autonomy / self-direction', 'Security / stability', 'Helping others',
-  'Influence / leadership', 'Variety / stimulation', 'Social impact', 'Creativity',
-  'Financial reward', 'Work–life balance',
+// Each work value is rated for importance (not a forced top-3 pick) — per
+// supervisor + Shuai: "have all of them rated, however simple."
+const WORK_VALUE_ITEMS = [
+  { id: 'val_achievement', text: 'Achievement' },
+  { id: 'val_autonomy', text: 'Autonomy / self-direction' },
+  { id: 'val_security', text: 'Security / stability' },
+  { id: 'val_helping', text: 'Helping others' },
+  { id: 'val_influence', text: 'Influence / leadership' },
+  { id: 'val_variety', text: 'Variety / stimulation' },
+  { id: 'val_impact', text: 'Social impact' },
+  { id: 'val_creativity', text: 'Creativity' },
+  { id: 'val_financial', text: 'Financial reward' },
+  { id: 'val_balance', text: 'Work–life balance' },
 ];
+const VALUE_SCALE = { points: 5, left: 'Not important', right: 'Essential' };
 
 const RIASEC = [
   { id: 'ria_R', key: 'R', text: 'building, fixing, or working with your hands and tools' },
@@ -127,7 +137,12 @@ function IOSField({ id, value, onChange, career }) {
       </div>
       <div className="sv-ios-row">
         {opts.map((n) => {
-          const overlap = 10 + (n - 1) * 6; // px the circles overlap
+          // Two equal circles whose centre distance shrinks MONOTONICALLY from
+          // 1 (apart) to 7 (almost one). The old version overshot and converged
+          // at 3 then separated again, so 1≈6 and 2≈5 looked identical.
+          const r = 12, cy = 15, cx = 32, dMax = 28, dMin = 5;
+          const dist = dMax - ((n - 1) / 6) * (dMax - dMin);
+          const lx = cx - dist / 2, rx = cx + dist / 2;
           return (
             <button
               key={n}
@@ -136,10 +151,9 @@ function IOSField({ id, value, onChange, career }) {
               onClick={() => onChange(id, n)}
               aria-label={`Closeness ${n}`}
             >
-              <svg width="58" height="34" viewBox="0 0 58 34">
-                <circle cx={20 + (7 - n) * 0.6} cy="17" r="13" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                <circle cx={38 - (7 - n) * 0.6} cy="17" r="13" fill="none" stroke="currentColor" strokeWidth="1.6"
-                        transform={`translate(${-(overlap - 10)},0)`} />
+              <svg width="60" height="30" viewBox="0 0 64 30">
+                <circle cx={lx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth="1.6" />
+                <circle cx={rx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth="1.6" />
               </svg>
               <span className="sv-ios-num">{n}</span>
             </button>
@@ -235,9 +249,9 @@ function buildPreSections(answers, onChange) {
     },
     {
       title: 'What matters in work',
-      intro: 'Choose the three that matter most to you.',
-      ids: ['values'],
-      node: <MultiField id="values" options={WORK_VALUES} pick={3} value={answers.values} onChange={set} />,
+      intro: 'How important is each of these to you in work? Rate every one.',
+      ids: WORK_VALUE_ITEMS.map((i) => i.id),
+      node: <LikertGrid items={WORK_VALUE_ITEMS} scale={VALUE_SCALE} answers={answers} onChange={set} />,
     },
     {
       title: 'What kind of work appeals',
@@ -399,13 +413,24 @@ function scoreRiasec(a) {
   return out;
 }
 
+// Work values are now rated individually; distil the most important ones (>=4,
+// else the top 3) into the name list the prompts expect.
+function topWorkValues(pre) {
+  const rated = WORK_VALUE_ITEMS
+    .map((it) => ({ name: it.text, r: Number(pre[it.id]) }))
+    .filter((x) => !Number.isNaN(x.r));
+  rated.sort((a, b) => b.r - a.r);
+  const important = rated.filter((x) => x.r >= 4).map((x) => x.name);
+  return important.length ? important : rated.slice(0, 3).map((x) => x.name);
+}
+
 // Build the structured profileData the backend prompts expect (career added later).
 function buildProfileData(pre) {
   return {
     year: pre.year,
     demographics: { age: pre.age, gender: pre.gender, major: 'Economics & Business' },
     bigFive: scoreBigFive(pre),
-    values: pre.values || [],
+    values: topWorkValues(pre),
     riasec: scoreRiasec(pre),
   };
 }

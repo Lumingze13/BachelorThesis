@@ -30,6 +30,22 @@ function splitParas(text) {
   return parts.length ? parts : [(text || '').trim()];
 }
 
+/* Render minimal inline markdown (**bold**, *italic*) so the model's emphasis
+ * shows as formatting instead of distracting raw asterisks. Shared by both chats. */
+function renderRich(text) {
+  const out = [];
+  const re = /\*\*([^*]+)\*\*|\*([^*\n]+)\*/g;
+  let last = 0, m, k = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    if (m[1] != null) out.push(<strong key={k++}>{m[1]}</strong>);
+    else out.push(<em key={k++}>{m[2]}</em>);
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 // When the frontend is hosted separately (Vercel) from the API (Railway),
 // window.THESIS_API_BASE (set in config.js) points at the backend origin.
 // Empty string keeps relative paths so same-origin / local dev still works.
@@ -225,7 +241,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
                     {m.regenerating
                       ? <div className="typing"><span></span><span></span><span></span></div>
                       : m.role === 'future'
-                        ? m.paras.map((p, i) => <p key={i}>{p}</p>)
+                        ? m.paras.map((p, i) => <p key={i}>{renderRich(p)}</p>)
                         : m.text}
                   </div>
                   {m.role === 'future' && !m.regenerating && (
@@ -303,4 +319,4 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
   );
 }
 
-Object.assign(window, { Chat, postJSON, splitParas, buildOpening });
+Object.assign(window, { Chat, postJSON, splitParas, renderRich, buildOpening });

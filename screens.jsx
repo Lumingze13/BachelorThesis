@@ -10,8 +10,8 @@ function Landing({ onBegin }) {
       <nav className="topnav">
         <div className="brand"><BrandMark size={22}/><span>Thesis</span></div>
         <div className="nav-links">
-          <a href="#how">How it works</a>
-          <a href="#about">About the study</a>
+          <a href="#how" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>How it works</a>
+          <a href="#about" onClick={(e) => { e.preventDefault(); document.getElementById('about')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>About the study</a>
         </div>
         <div className="end">
           <button className="btn ghost sm" onClick={onBegin}>Sign in</button>
@@ -45,8 +45,8 @@ function Landing({ onBegin }) {
       <section className="howit" id="how">
         <h2>How a session works</h2>
         <p className="lede">
-          Three short steps, then a conversation. Everything before the chat exists
-          to make that future self sound specifically like you.
+          Three short steps, then a conversation. Before the chat, you answer some
+          questions to make the future self sound specifically like you.
         </p>
         <div className="steps">
           <div className="step">
@@ -64,8 +64,8 @@ function Landing({ onBegin }) {
           <div className="step">
             <span className="num">STEP 03</span>
             <h3>Have the conversation</h3>
-            <p>Talk with yourself, ten years on, working in that career. They speak in
-              scenes, not summaries — and they won't tell you what to do.</p>
+            <p>Talk with yourself, ten years on, working in that career. Your future self
+              speaks in scenes, not summaries — and won't tell you what to do.</p>
           </div>
         </div>
       </section>
@@ -98,7 +98,7 @@ function AvatarCreation({ value, onChange }) {
         <div className="q-eyebrow">STEP 01 OF 03 · SET UP</div>
         <h2 className="section-title">Give your future self a name.</h2>
         <p className="section-sub">
-          They are simply you, a decade older. This is just a label and a color so the
+          This is simply you, a decade older. The name is just a label and a color so the
           conversation has a face — the real persona is built from your answers next.
         </p>
 

@@ -45,6 +45,8 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+html { scroll-behavior: smooth; }
+#how, #about { scroll-margin-top: 84px; }
 body {
   margin: 0;
   font-family: var(--font-sans);
