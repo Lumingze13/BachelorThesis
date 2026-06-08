@@ -191,7 +191,7 @@ mountResultsRoutes(app);
 // --- Static frontend ------------------------------------------------------
 // Block server source, libs, DB schema, eval internals, tests, and the admin
 // HTML (served only via the gated /admin route) from being served statically.
-const STATIC_DENY = /^\/(lib|db|test|node_modules|eval_pipeline)(\/|$)/;
+const STATIC_DENY = /^\/(lib|db|test|node_modules|eval_pipeline|showcase)(\/|$)/;
 app.use((req, res, next) => {
   if (STATIC_DENY.test(req.path)) return res.status(404).end();
   if (req.path === '/admin/index.html' || req.path === '/admin/login.html') return res.status(404).end();

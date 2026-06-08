@@ -114,6 +114,15 @@ cookie. All `/api/results/*` payloads are de-identified + name-stripped.
 
 ---
 
+## Silicon cohort (simulated participants)
+Run the RQ pipeline on **simulated** participants seeded from real open-data
+profiles (Big Five + RIASEC + demographics), for method validation before human
+data exists. Participant model (Opus) ≠ judge model (Sonnet) to avoid trivial
+self-agreement. Pick the cohort with `scripts/select_cohort.py`, then
+`node run_silicon_cohort.mjs --n 1 --skip-eval` to eyeball one, then scale. This
+is **method validation (LLM↔LLM), not human ground truth** — see
+[`SILICON_COHORT.md`](SILICON_COHORT.md).
+
 ## Evaluation runs
 - **Synthetic** (offline, deterministic): generates planted-truth sessions and a
   `FakeLLM`, reproducing the agreement gradient (D0 near-chance → D2 good → D3

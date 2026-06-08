@@ -112,6 +112,8 @@ def main():
     ap.add_argument("--n", type=int, default=24)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--use-real", action="store_true")
+    ap.add_argument("--run-label", default=None,
+                    help="Banner label for the report (e.g. 'Silicon cohort — method validation').")
     args = ap.parse_args()
 
     depths = [d.strip() for d in args.depths.split(",") if d.strip()]
@@ -177,6 +179,9 @@ def main():
             figure_paths=fig_paths, aggregated_metrics=agg, out_path=str(report_path),
             n_participants=len(sessions), depths=depths,
             prompt_structures=structures, n_runs=args.n_runs,
+            source=source, use_real=args.use_real,
+            model=("claude-sonnet-4-6" if args.use_real else "FakeLLM"),
+            run_label=args.run_label,
         )
     except Exception as e:
         print(f"[run_eval] build_report_html failed ({e}); writing fallback report", flush=True)

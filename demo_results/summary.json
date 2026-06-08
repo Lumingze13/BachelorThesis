@@ -1,0 +1,192 @@
+{
+  "source": "synthetic",
+  "use_real": false,
+  "n_participants": 80,
+  "depths": [
+    "D0",
+    "D1",
+    "D2",
+    "D3"
+  ],
+  "prompt_structures": [
+    "structured"
+  ],
+  "headline": [
+    {
+      "depth": "D0",
+      "prompt_structure": "structured",
+      "outcome": "continuity",
+      "spearman": 0.1774,
+      "qwk": 0.0468,
+      "icc21": 0.1085,
+      "mae": 0.8584,
+      "n_sessions": 80,
+      "interrun_sd": 0.981
+    },
+    {
+      "depth": "D0",
+      "prompt_structure": "structured",
+      "outcome": "vividness",
+      "spearman": 0.0101,
+      "qwk": 0.0603,
+      "icc21": 0.0308,
+      "mae": 0.8508,
+      "n_sessions": 80,
+      "interrun_sd": 0.8764
+    },
+    {
+      "depth": "D0",
+      "prompt_structure": "structured",
+      "outcome": "closeness",
+      "spearman": -0.056,
+      "qwk": -0.16,
+      "icc21": -0.0876,
+      "mae": 1.1819,
+      "n_sessions": 80,
+      "interrun_sd": 1.6978
+    },
+    {
+      "depth": "D0",
+      "prompt_structure": "structured",
+      "outcome": "manip_checks",
+      "spearman": 0.1256,
+      "qwk": 0.1149,
+      "icc21": 0.1215,
+      "mae": 0.9872,
+      "n_sessions": 80,
+      "interrun_sd": 0.9276
+    },
+    {
+      "depth": "D1",
+      "prompt_structure": "structured",
+      "outcome": "continuity",
+      "spearman": 0.4521,
+      "qwk": 0.3368,
+      "icc21": 0.425,
+      "mae": 0.7691,
+      "n_sessions": 80,
+      "interrun_sd": 0.4684
+    },
+    {
+      "depth": "D1",
+      "prompt_structure": "structured",
+      "outcome": "vividness",
+      "spearman": 0.3454,
+      "qwk": 0.3292,
+      "icc21": 0.3393,
+      "mae": 0.8451,
+      "n_sessions": 80,
+      "interrun_sd": 0.3843
+    },
+    {
+      "depth": "D1",
+      "prompt_structure": "structured",
+      "outcome": "closeness",
+      "spearman": 0.2824,
+      "qwk": 0.1991,
+      "icc21": 0.2339,
+      "mae": 0.9457,
+      "n_sessions": 80,
+      "interrun_sd": 0.8315
+    },
+    {
+      "depth": "D1",
+      "prompt_structure": "structured",
+      "outcome": "manip_checks",
+      "spearman": 0.2171,
+      "qwk": -0.0391,
+      "icc21": 0.0847,
+      "mae": 0.9693,
+      "n_sessions": 80,
+      "interrun_sd": 0.5013
+    },
+    {
+      "depth": "D2",
+      "prompt_structure": "structured",
+      "outcome": "continuity",
+      "spearman": 0.4515,
+      "qwk": 0.4125,
+      "icc21": 0.4295,
+      "mae": 0.8079,
+      "n_sessions": 80,
+      "interrun_sd": 0.2352
+    },
+    {
+      "depth": "D2",
+      "prompt_structure": "structured",
+      "outcome": "vividness",
+      "spearman": 0.4123,
+      "qwk": 0.3623,
+      "icc21": 0.3754,
+      "mae": 0.8695,
+      "n_sessions": 80,
+      "interrun_sd": 0.221
+    },
+    {
+      "depth": "D2",
+      "prompt_structure": "structured",
+      "outcome": "closeness",
+      "spearman": 0.4018,
+      "qwk": 0.3165,
+      "icc21": 0.3432,
+      "mae": 0.9293,
+      "n_sessions": 80,
+      "interrun_sd": 0.4217
+    },
+    {
+      "depth": "D2",
+      "prompt_structure": "structured",
+      "outcome": "manip_checks",
+      "spearman": 0.9823,
+      "qwk": 0.9457,
+      "icc21": 0.9798,
+      "mae": 0.1838,
+      "n_sessions": 80,
+      "interrun_sd": 0.1065
+    },
+    {
+      "depth": "D3",
+      "prompt_structure": "structured",
+      "outcome": "continuity",
+      "spearman": 0.8151,
+      "qwk": 0.7008,
+      "icc21": 0.7921,
+      "mae": 0.4328,
+      "n_sessions": 80,
+      "interrun_sd": 0.0809
+    },
+    {
+      "depth": "D3",
+      "prompt_structure": "structured",
+      "outcome": "vividness",
+      "spearman": 0.8113,
+      "qwk": 0.7406,
+      "icc21": 0.8593,
+      "mae": 0.3424,
+      "n_sessions": 80,
+      "interrun_sd": 0.0765
+    },
+    {
+      "depth": "D3",
+      "prompt_structure": "structured",
+      "outcome": "closeness",
+      "spearman": 0.8408,
+      "qwk": 0.7556,
+      "icc21": 0.8486,
+      "mae": 0.4371,
+      "n_sessions": 80,
+      "interrun_sd": 0.1352
+    },
+    {
+      "depth": "D3",
+      "prompt_structure": "structured",
+      "outcome": "manip_checks",
+      "spearman": -0.1591,
+      "qwk": 0.0,
+      "icc21": -0.0115,
+      "mae": 1.0047,
+      "n_sessions": 80,
+      "interrun_sd": 0.0758
+    }
+  ]
+}

@@ -446,12 +446,49 @@ def build_report_html(
     depths: Optional[List[str]] = None,
     prompt_structures: Optional[List[str]] = None,
     n_runs: int = 5,
+    source: str = "synthetic",
+    use_real: bool = False,
+    model: Optional[str] = None,
+    run_label: Optional[str] = None,
 ) -> None:
     """Build a self-contained HTML report with embedded figures."""
     if depths is None:
         depths = ["D0", "D1", "D2", "D3"]
     if prompt_structures is None:
         prompt_structures = ["structured"]
+
+    # --- Source-aware framing (so real / silicon runs are not mislabeled) -----
+    is_real = (source == "db") or use_real
+    judge_name = model or ("real LLM" if use_real else "FakeLLM")
+    if run_label:
+        banner_html = (
+            f'<div class="banner banner-real">{run_label}<br>'
+            f'N={n_participants} sessions · judge={judge_name}. Agreement = judge-predicted vs '
+            f'self-reported ratings. Small N → descriptive / pilot only.</div>'
+        )
+    elif is_real:
+        banner_html = (
+            f'<div class="banner banner-real">EVALUATION ON STORED SESSIONS — N={n_participants}; '
+            f'judge={judge_name}.<br>An independent LLM judge predicts each session\'s self-report '
+            f'ratings from the transcript; the table shows predicted-vs-actual agreement. '
+            f'Small N → descriptive / pilot only.</div>'
+        )
+    else:
+        banner_html = (
+            '<div class="banner">⚠️  DEMONSTRATION ON SYNTHETIC DATA — method/plumbing '
+            'validation only.<br>Real session exports drop in unchanged: place app JSON exports in '
+            '<code>eval_pipeline/data/raw/</code> and re-run. '
+            f'Results below reflect N={n_participants} synthetic participants with planted latent truth.</div>'
+        )
+    subtitle = ("Real-session evaluation report." if is_real
+                else "Offline demo report. Generated automatically by <code>python -m eval_pipeline.run_demo</code>.")
+    data_limit = (
+        f"<li><b>Source</b>: stored sessions (N={n_participants}); judge={judge_name}. "
+        f"Agreement is judge-predicted vs self-report. If sessions are AI-generated (silicon cohort), "
+        f"this is LLM↔LLM method validation, not human ground truth.</li>" if is_real else
+        "<li><b>Synthetic data only</b>: All results shown here use synthetic sessions with planted "
+        "latent truth. Real session exports have not been collected yet.</li>"
+    )
 
     # Embed all figures as base64
     fig_tags = {}
@@ -473,6 +510,7 @@ def build_report_html(
   body {{ font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; color: #222; }}
   .banner {{ background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; padding: 14px 18px;
             font-size: 1.1em; font-weight: bold; margin-bottom: 24px; }}
+  .banner-real {{ background: #e8f3ee; border-color: #3f9d6a; color: #1f5d46; }}
   h1 {{ color: #003366; }}
   h2 {{ color: #003366; border-bottom: 1px solid #ccc; padding-bottom: 4px; }}
   h3 {{ color: #0570b0; }}
@@ -492,15 +530,10 @@ def build_report_html(
 </head>
 <body>
 
-<div class="banner">
-  ⚠️  DEMONSTRATION ON SYNTHETIC DATA — method/plumbing validation only.<br>
-  Real session exports drop in unchanged: place app JSON exports in
-  <code>eval_pipeline/data/raw/</code> and re-run.
-  Results below reflect N={n_participants} synthetic participants with planted latent truth.
-</div>
+{banner_html}
 
 <h1>Future-Self Career Chatbot — Evaluation Pipeline</h1>
-<p><em>BSc Thesis — Offline demo report. Generated automatically by <code>python -m eval_pipeline.run_demo</code>.</em></p>
+<p><em>BSc Thesis — {subtitle}</em></p>
 
 <h2>1. Method Summary</h2>
 <p>
@@ -604,12 +637,12 @@ as a methodological check only and is excluded from all substantive conclusions.
 <h2>6. Limitations</h2>
 <div class="limitations">
 <ul>
-  <li><b>Synthetic data only</b>: All results shown here use synthetic sessions with planted latent truth. Real session exports have not been collected yet.</li>
+  {data_limit}
   <li><b>No test-retest data</b>: Park (2019) normalized accuracy cannot be computed; FSCS test-retest r≈.66 cited as context only.</li>
   <li><b>Single judge model</b>: Only one LLM (FakeLLM here; claude-sonnet-4-6 in production) acts as judge. No inter-model agreement computed.</li>
   <li><b>SSR stub embedder</b>: The offline demo uses a char n-gram hashing vectorizer as a stand-in. Real agreement requires sentence-transformers or equivalent.</li>
   <li><b>Persuasiveness not collected</b>: The app does not export a persuasiveness outcome. The slot is reserved but empty.</li>
-  <li><b>Small N</b>: Default N=24 synthetic participants. Results are descriptive only; no inferential testing.</li>
+  <li><b>Small N</b>: N={n_participants}. Results are descriptive only; no inferential testing.</li>
   <li><b>Model/temperature fixed</b>: Model is constrained to claude-sonnet-4-6 (matches the app). Temperature and seed are varied instead of model; this study does not implement cross-model comparison.</li>
 </ul>
 </div>

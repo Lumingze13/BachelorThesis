@@ -444,6 +444,20 @@ function SessionsView() {
   );
 }
 
+// ---------- Showcase (embeds the self-contained supervisor walkthrough) ----------
+function Showcase() {
+  return (
+    <div>
+      <h1 className="page">Silicon-cohort showcase</h1>
+      <p className="sub">A supervisor-facing walkthrough of the method-validation run (N=20 silicon participants):
+        what it is, why it matters, and the headline charts. Self-contained — open full screen for the best view.</p>
+      <p style={{ margin: '0 0 12px' }}><a className="btn pri" href="/results/showcase" target="_blank" rel="noreferrer">Open full screen ↗</a></p>
+      <iframe src="/results/showcase" title="Silicon cohort showcase"
+        style={{ width: '100%', height: '78vh', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', boxShadow: 'var(--shadow-card)' }} />
+    </div>
+  );
+}
+
 function App() {
   const [tab, setTab] = useState('overview');
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
@@ -454,7 +468,7 @@ function App() {
     setDark(!dark);
   };
   const logout = async () => { await fetch('/results/logout', { method: 'POST' }); location.href = '/results'; };
-  const TABS = [['overview', 'Overview'], ['rq', 'RQ results'], ['sim', 'Real vs simulated'], ['sessions', 'Browse sessions']];
+  const TABS = [['overview', 'Overview'], ['rq', 'RQ results'], ['sim', 'Real vs simulated'], ['sessions', 'Browse sessions'], ['showcase', 'Showcase']];
   return (
     <div>
       <header>
@@ -468,7 +482,7 @@ function App() {
         <button className="btn" onClick={logout}>Sign out</button>
       </header>
       <main>
-        {tab === 'overview' ? <Overview /> : tab === 'rq' ? <RunsView /> : tab === 'sim' ? <SimsView /> : <SessionsView />}
+        {tab === 'overview' ? <Overview /> : tab === 'rq' ? <RunsView /> : tab === 'sim' ? <SimsView /> : tab === 'showcase' ? <Showcase /> : <SessionsView />}
       </main>
     </div>
   );
