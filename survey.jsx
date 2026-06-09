@@ -243,7 +243,7 @@ function buildPreSections(answers, onChange) {
     },
     {
       title: 'How you see yourself',
-      intro: 'I see myself as someone who… (rate each)',
+      intro: 'How well do the following statements describe your personality? I see myself as someone who…',
       ids: BFI10.map((i) => i.id),
       node: <LikertGrid items={BFI10} scale={BFI_SCALE} prefix="…" answers={answers} onChange={set} />,
     },
@@ -255,13 +255,13 @@ function buildPreSections(answers, onChange) {
     },
     {
       title: 'What kind of work appeals',
-      intro: 'How much would you enjoy work that involves…',
+      intro: 'For each type of activity, indicate how much you would enjoy work that involves…',
       ids: RIASEC.map((i) => i.id),
       node: <LikertGrid items={RIASEC} scale={RIASEC_SCALE} answers={answers} onChange={set} />,
     },
     {
       title: 'Your future self, today',
-      intro: 'Before you meet them — how do you picture yourself about 10 years from now?',
+      intro: "By “your future self” we mean the version of you about 10 years from now. These questions capture how you picture that person today — you'll answer the same ones again after the conversation, so we can see what shifts.",
       ids: ['ios_pre', ...FSCS.map((i) => i.id), ...VIVIDNESS.map((i) => i.id)],
       node: (
         <div className="sv-section">
@@ -282,7 +282,7 @@ function buildPostSections(answers, onChange, career) {
   return [
     {
       title: 'Your future self, now',
-      intro: 'After the conversation — how do you picture them now?',
+      intro: 'Now — after the conversation — how do you picture your future self (about 10 years from now)?',
       ids: ['ios_post', ...fscsPost.map((i) => i.id), ...vivPost.map((i) => i.id)],
       node: (
         <div className="sv-section">

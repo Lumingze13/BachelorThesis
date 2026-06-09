@@ -31,6 +31,9 @@ function readCondition() {
 // identical to before, and the JSON download at Closure still works.
 const PERSIST_BASE = (typeof window !== 'undefined' && window.THESIS_API_BASE) || '';
 
+// Local key for resume-after-disconnect (stores the participant's in-progress run).
+const PROGRESS_KEY = 'thesis_progress_v3';
+
 function readSessionParam() {
   try { return new URLSearchParams(window.location.search).get('session'); } catch (e) { return null; }
 }
@@ -91,10 +94,36 @@ function App() {
   // Establish (or adopt) a persistent study session id for this run.
   const studyId = useRef(null);
   useEffect(() => {
+    // Resume an in-progress run after a refresh / lost connection: restore the
+    // saved local snapshot (answers, selections, screen) so nothing is re-entered.
+    let snap = null;
+    try { snap = JSON.parse(localStorage.getItem(PROGRESS_KEY) || 'null'); } catch (e) {}
     const existing = readSessionParam();
+    if (snap && snap.screen && snap.screen !== 'landing' && snap.screen !== 'done') {
+      if (snap.studyId) studyId.current = snap.studyId;
+      else if (existing) studyId.current = existing;
+      if (snap.profile) setProfile(snap.profile);
+      if (snap.preAnswers) setPreAnswers(snap.preAnswers);
+      if (snap.phaseB) setPhaseB(snap.phaseB);
+      if (snap.phaseC) setPhaseC(snap.phaseC);
+      if (snap.postAnswers) setPostAnswers(snap.postAnswers);
+      setScreen(snap.screen);
+      return;
+    }
     if (existing) { studyId.current = existing; return; } // admin-created participant link
     apiCreateSession(condition).then((id) => { studyId.current = id; });
   }, []); // once
+
+  // Persist progress locally so a dropped connection / refresh can resume.
+  useEffect(() => {
+    if (screen === 'landing') return;
+    try {
+      if (screen === 'done') { localStorage.removeItem(PROGRESS_KEY); return; }
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+        studyId: studyId.current, screen, profile, preAnswers, phaseB, phaseC, postAnswers,
+      }));
+    } catch (e) { /* storage unavailable — non-blocking */ }
+  }, [screen, profile, preAnswers, phaseB, phaseC, postAnswers]);
 
   const setPre = (id, v) => setPreAnswers(prev => ({ ...prev, [id]: v }));
   const setPost = (id, v) => setPostAnswers(prev => ({ ...prev, [id]: v }));
@@ -106,6 +135,9 @@ function App() {
     : baseProfile;
 
   const restart = () => {
+    try { localStorage.removeItem(PROGRESS_KEY); } catch (e) {}
+    studyId.current = null;
+    apiCreateSession(condition).then((id) => { studyId.current = id; }); // fresh run = fresh session
     setProfile({ name: '', color: tweaks.accent });
     setPreAnswers({}); setPhaseB(null); setPhaseC(null); setPostAnswers({});
     setScreen('landing');

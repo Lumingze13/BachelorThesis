@@ -200,9 +200,9 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
         </div>
 
         <div className="side-section" style={{marginTop: 'auto'}}>
-          <div className="side-h">A note</div>
+          <div className="side-h">Why this is a role-play</div>
           <div className="side-item" style={{cursor: 'default', alignItems: 'flex-start', lineHeight: 1.45, color: 'var(--muted)'}}>
-            <span style={{fontSize: 12}}>This is a role-play to help you imagine a future — not a prediction or a recommendation. The decision stays yours.</span>
+            <span style={{fontSize: 12}}>This is an imaginative role-play, not a prediction or career advice — so you can explore your questions freely. The decision about your future stays yours.</span>
           </div>
         </div>
       </aside>
@@ -312,7 +312,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 11V3M3 7l4-4 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
-          <div className="composer-foot">Your future self is one possible version — a role-play, not a recommendation.</div>
+          <div className="composer-foot">Ask anything — your future self is here to think it through with you.</div>
         </div>
       </main>
     </div>
