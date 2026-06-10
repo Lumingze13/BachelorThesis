@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Silicon Cohort — method validation · Thesis</title>
+<title>Silicon participants — fidelity study · Thesis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -106,29 +106,15 @@
   .axis{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;
     color:var(--muted-2);margin-top:8px;padding-left:132px;}
 
-  /* diverging bars (centre zero) */
-  .dv-row{display:grid;grid-template-columns:120px 1fr 64px;align-items:center;gap:12px;}
-  .dv-track{height:14px;background:var(--surface-3);border-radius:var(--radius-pill);position:relative;}
-  .dv-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--border-strong);}
-  .dv-fill{position:absolute;top:0;bottom:0;border-radius:var(--radius-pill);width:0;transition:width 1s cubic-bezier(.2,.7,.2,1);}
-
-  /* heatmap */
-  .heat{display:grid;grid-template-columns:130px repeat(3,1fr);gap:7px;align-items:center;}
-  .heat .hh{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;}
-  .heat .rl{font-size:13.5px;color:var(--ink-2);}
-  .cell{height:52px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-mono);font-size:15px;font-weight:500;border:1px solid var(--border);}
-  .heat-legend{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;color:var(--muted);}
-  .heat-legend .scale{height:10px;width:160px;border-radius:var(--radius-pill);
-    background:linear-gradient(90deg,var(--surface-3),color-mix(in oklch,var(--accent) 35%,var(--surface)),var(--accent));}
-
-  /* grouped change-vs-level */
-  .cl-row{margin-bottom:16px;}
-  .cl-row .lab{font-size:13.5px;color:var(--ink-2);margin-bottom:7px;display:flex;justify-content:space-between;}
-  .cl-row .lab .nums{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);}
-  .cl-bars{display:flex;flex-direction:column;gap:6px;}
-  .cl-mini{display:grid;grid-template-columns:54px 1fr;align-items:center;gap:10px;}
-  .cl-mini .t{font-family:var(--font-mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  /* SD-collapse (paired) */
+  .sd-row{margin-bottom:16px;}
+  .sd-row .lab{font-size:13.5px;color:var(--ink-2);margin-bottom:7px;display:flex;justify-content:space-between;align-items:baseline;}
+  .sd-row .lab .meta{font-family:var(--font-mono);font-size:11px;}
+  .sd-bars{display:flex;flex-direction:column;gap:6px;}
+  .sd-mini{display:grid;grid-template-columns:64px 1fr 44px;align-items:center;gap:10px;}
+  .sd-mini .t{font-family:var(--font-mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  .sd-mini .v{font-family:var(--font-mono);font-size:11px;text-align:right;}
+  .sig{color:var(--accent-ink);} .nsig{color:var(--muted);}
 
   /* chat excerpt */
   .chat{display:flex;flex-direction:column;gap:12px;}
@@ -163,111 +149,82 @@
 <body>
   <nav class="nav">
     <span class="brand"><span class="dot"></span>Thesis</span>
-    <span class="tag">Silicon cohort · results</span>
+    <span class="tag">Silicon participants · fidelity</span>
     <span class="sp"></span>
     <button class="icon-btn" id="themeBtn" title="Toggle light / dark">☾</button>
   </nav>
 
   <header class="hero wrap">
-    <span class="eyebrow"><span class="dot"></span>Method validation · LLM-as-judge</span>
-    <h1 class="title">Can an AI read a conversation and recover how it made you <em>feel</em>?</h1>
+    <span class="eyebrow"><span class="dot"></span>Silicon participants · fidelity study</span>
+    <h1 class="title">Can an AI <em>stand in</em> for a real study participant?</h1>
     <p class="lede">
-      We built 20 <b>“silicon participants”</b> from real open-data personality profiles, had each one
-      actually live the study — chatting with the same future-self chatbot real students use — then asked an
-      <b>independent AI judge</b> to predict their self-reported feelings from the transcript alone. It’s a full
-      dry-run of the thesis’ evaluation pipeline, end to end, before a single human session.
+      We turn real psychometric profiles into LLM <b>“silicon participants,”</b> run each one through the entire
+      future-self career study — it picks a career, talks to the future-self bot, and fills in the questionnaires —
+      and ask how faithfully that reproduces what <b>human</b> participants do. The first result is about a prior
+      question: <b>how much do the simulated outcomes depend on how the persona is built?</b>
     </p>
     <div class="pills">
-      <span class="pill"><span class="k">N=20</span> silicon participants</span>
-      <span class="pill">profiles from <b>145,828</b>-person open dataset</span>
-      <span class="pill">participant <b>Opus</b> &nbsp;≠&nbsp; judge <b>Sonnet</b></span>
+      <span class="pill"><span class="k">N=30</span> silicon participants</span>
+      <span class="pill">profiles from a <b>145,828</b>-person open dataset</span>
+      <span class="pill">model held fixed: <b>Sonnet</b></span>
     </div>
   </header>
 
   <!-- IDEA -->
   <section class="wrap">
     <div class="kicker">The idea</div>
-    <h2>A study that runs itself — so the method can be tested before people are.</h2>
-    <p class="sub">Three moves turn a static dataset into a living agreement experiment:</p>
+    <h2>Build the participant, not just the chatbot.</h2>
+    <p class="sub">The thesis asks whether LLM-simulated participants can reproduce human study outcomes. Three moves:</p>
     <div class="steps">
-      <div class="step"><span class="n">01 — REAL INPUTS</span><h3>Real profiles in</h3>
-        <p>Each persona is a real respondent from a 145,828-person RIASEC + Big-Five open dataset — genuine trait
-        and interest patterns, filtered to our undergraduate business/econ frame.</p></div>
-      <div class="step"><span class="n">02 — IT LIVES THE STUDY</span><h3>The persona participates</h3>
-        <p>An <b>Opus</b> participant plays that student — picks a career, talks to the <b>same Sonnet future-self bot
-        the humans use</b>, and fills in the continuity / vividness / closeness questionnaires before and after.</p></div>
-      <div class="step"><span class="n">03 — A JUDGE GUESSES</span><h3>An independent judge scores</h3>
-        <p>A separate <b>Sonnet</b> judge reads only the transcript and predicts those ratings. Participant ≠ judge,
-        so there’s no way to trivially agree with itself — the core anti-circularity guard.</p></div>
+      <div class="step"><span class="n">01 — REAL PROFILE</span><h3>Start from a real person</h3>
+        <p>Each persona carries the real Big-Five + RIASEC + demographics of one respondent in a 145,828-person open
+        psychometrics dataset, filtered to an undergraduate business/economics frame.</p></div>
+      <div class="step"><span class="n">02 — IT LIVES THE STUDY</span><h3>Run the whole pipeline</h3>
+        <p>An LLM plays that person — self-reports the pre-survey, talks to the future-self bot, self-reports the
+        post-survey — producing a session in the exact shape a human session would.</p></div>
+      <div class="step"><span class="n">03 — COMPARE TO HUMANS</span><h3>Measure the fidelity</h3>
+        <p>Compare the simulated outcomes to human results — means, the pre→post effect, and the <b>variance</b>. The
+        human side is the next step; first we test how robust the simulation itself is.</p></div>
     </div>
-    <p class="note" style="margin-top:22px"><b>Why that’s cool:</b> it exercises every moving part of the real
-      research question — persona depth, prompt structure, the judge, the metrics — on lifelike data, for the price of
-      API calls instead of months of recruitment. If the pipeline is going to break or mislead, it shows here first.</p>
   </section>
 
-  <!-- CHART 1: manipulation works -->
+  <!-- FINDING 1: face validity -->
   <section class="wrap">
     <div class="kicker">Finding 1 · Face validity</div>
-    <h2>The conversation actually <em>moves</em> people.</h2>
+    <h2>The simulated participants <em>react</em> like people.</h2>
     <div class="card">
-      <h3>Mean shift in self-reported feelings, before → after the chat</h3>
-      <p class="cap">Across all 20 silicon participants, every future-self outcome rises after the conversation — exactly the
-        Identity-Based-Motivation direction the study predicts. The personas aren’t flat responders; they react like
-        people who just had a vivid glimpse of their future. <b>Scales are 1–7.</b></p>
+      <h3>Mean shift in self-reported feelings, before → after the conversation (N=30, 1–7 scale)</h3>
+      <p class="cap">Every future-self outcome rises after the chat — the Identity-Based-Motivation direction the study
+        predicts. The personas aren’t flat responders; they move like someone who just had a vivid glimpse of their
+        future. A necessary sanity check before asking whether they match humans.</p>
       <div class="bars" id="deltaBars"></div>
-      <div class="axis"><span>0</span><span>+1</span><span>+2</span><span>+3</span><span>+3.5</span></div>
+      <div class="axis"><span>0</span><span>+1</span><span>+2</span><span>+3</span></div>
     </div>
   </section>
 
-  <!-- CHART 2: agreement heatmap -->
+  <!-- FINDING 2: the headline -->
   <section class="wrap">
-    <div class="kicker">Finding 2 · The RQ metric</div>
-    <h2>How well the judge agrees, by how much it’s told.</h2>
+    <div class="kicker">Finding 2 · The result so far</div>
+    <h2>Richer personas buy <em>variance</em>, not a different average.</h2>
     <div class="card">
-      <h3>Rank agreement (Spearman ρ) — judge’s predicted rating vs the participant’s self-report</h3>
-      <p class="cap">Each cell is one outcome at one <b>persona depth</b> (D0 = demographics only, D2 = + the person’s own
-        words, D3 = a deliberate leakage probe). Warmer = stronger agreement. The standout is
-        <b>continuity at D0 (ρ = 0.64)</b>; elsewhere agreement is weak — honest for a 20-person pilot, and a clear map
-        of where the judge already works and where it doesn’t.</p>
-      <div class="heat" id="heat"></div>
-      <div class="heat-legend"><span>ρ ≤ 0</span><span class="scale"></span><span>ρ → 0.85</span></div>
-    </div>
-  </section>
-
-  <!-- CHART 3: the headline -->
-  <section class="wrap">
-    <div class="kicker">Finding 3 · The interesting one</div>
-    <h2>The judge can’t read the <em>level</em> — but it tracks the <em>change</em>.</h2>
-    <div class="card">
-      <h3>Predicting the absolute rating vs. predicting the shift from baseline</h3>
-      <p class="cap">Absolute agreement (ICC) is near zero — the judge systematically under-reads how good people say they
-        feel. But ask a different question — <b>did this conversation move the person, and how much?</b> — and agreement
-        on the <b>change</b> jumps to <b>ρ ≈ 0.8</b> for continuity. The judge is a reliable <b>change-detector</b>, even
-        when it’s a poor absolute thermometer. That reframes what this kind of evaluator is actually good for.</p>
-      <div id="changeLevel"></div>
-    </div>
-  </section>
-
-  <!-- CHART 4: bias -->
-  <section class="wrap">
-    <div class="kicker">Finding 4 · A consistent personality</div>
-    <h2>The judge is a careful skeptic.</h2>
-    <div class="card">
-      <h3>Average gap: judge’s prediction − participant’s self-report (points, 1–7 scale)</h3>
-      <p class="cap">Every bar points the same way: the judge, working only from the transcript, rates feelings
-        <b>lower</b> than the participants rate themselves — most of all on the manipulation checks. It’s not random noise;
-        it’s a stable, correctable calibration offset. Knowing the bias is consistent is half the fix.</p>
-      <div class="bars" id="biasBars"></div>
-      <div class="axis" style="padding-left:132px"><span>−2.5</span><span>−1.5</span><span>0</span></div>
+      <h3>Persona-source ablation — full psychometric profile vs. baseline questionnaire only</h3>
+      <p class="cap">Same model, same bot, same 30 people; the only change is how the participant persona is built.
+        Stripping the Big-Five/RIASEC profile leaves the <b>means statistically unchanged</b> (paired-t p = 0.08–0.74)
+        but <b>significantly collapses the between-person variance</b> on 3 of 4 outcomes — SD roughly halves. Each
+        pair below is the spread (SD) of an outcome across the 30 participants under each persona source.</p>
+      <div id="sdCollapse"></div>
+      <p class="cap" style="margin:18px 0 0">This is the literature’s warning made measurable: <b>LLMs reproduce means
+        but flatten variance</b> — and here, the less you tell the persona, the flatter it gets. The rich profile’s
+        main job is to keep people <i>different from each other</i>.</p>
     </div>
   </section>
 
   <!-- EXCERPT -->
   <section class="wrap">
     <div class="kicker">Under the hood</div>
-    <h2>This is a real silicon conversation.</h2>
+    <h2>A real silicon conversation.</h2>
     <p class="sub">Persona PID001 — an auditor profile — talking to its future self. No human wrote this; the realism is
-      what makes the self-reports worth judging.</p>
+      what makes its self-reports worth comparing to a human’s.</p>
     <div class="card"><div class="chat" id="chat"></div></div>
   </section>
 
@@ -276,70 +233,60 @@
     <div class="kicker">Why it matters</div>
     <h2>What this buys the thesis.</h2>
     <div class="matters">
-      <div class="matter"><span class="ic">✓</span><h4>The pipeline is proven end-to-end</h4>
-        <p>Profiles → lived study → judged transcripts → agreement metrics all run on lifelike data. The machinery for the
-          real research question is verified and waiting for human sessions.</p></div>
-      <div class="matter"><span class="ic">↗</span><h4>It found a real, usable result</h4>
-        <p>The judge is weak on absolute levels but strong on change (ρ≈0.8). That’s a finding about <i>what LLM evaluators
-          are for</i> — measuring movement, not magnitude.</p></div>
-      <div class="matter"><span class="ic">🛡</span><h4>It de-risks the human study</h4>
-        <p>The systematic under-reading and the depth pattern are visible now, cheaply — so the instruments, rubric, and
-          calibration can be fixed before scarce participant data is spent.</p></div>
-      <div class="matter"><span class="ic">⚖</span><h4>It’s honest by construction</h4>
-        <p>Participant and judge are different models; depth D3 is a labelled leakage probe; every claim here is framed as a
-          pilot. The method shows its own seams.</p></div>
+      <div class="matter"><span class="ic">↗</span><h4>A measurable result, before any humans</h4>
+        <p>Means are robust to persona construction; variance is not. That’s a concrete, statistically-tested finding
+          (Levene p ≤ 0.05 on 3/4 outcomes) about how to build silicon participants.</p></div>
+      <div class="matter"><span class="ic">🔬</span><h4>It previews the core question</h4>
+        <p>If less conditioning flattens variance within silicon, the obvious risk is that <i>all</i> silicon
+          participants under-spread relative to humans — exactly the fidelity gap the thesis sets out to measure.</p></div>
+      <div class="matter"><span class="ic">⚙</span><h4>The apparatus works end-to-end</h4>
+        <p>Real profiles → lived study → paired statistical comparison runs at N=30, in parallel, in minutes. The
+          machinery is ready for the human benchmark the moment it arrives.</p></div>
+      <div class="matter"><span class="ic">⚖</span><h4>Honest by construction</h4>
+        <p>One factor changed at a time, model held fixed, every claim framed as a pilot with CIs and a variance test.
+          The method shows its own seams.</p></div>
     </div>
     <div style="margin-top:18px" class="honest">
       <h4>Read this the right way</h4>
       <ul>
-        <li><b>Method validation, not human ground truth.</b> Inputs are real; behaviour and ratings are AI-generated — this measures LLM↔LLM agreement (a dry-run), not LLM↔human.</li>
-        <li><b>N = 20 → descriptive only.</b> Correlations are unstable at this size; treat every number as a pilot signal, not a result.</li>
-        <li><b>Single judge model</b> (Sonnet), and <b>persuasiveness</b> isn’t collected by the app — so it isn’t shown.</li>
+        <li><b>Within-silicon, not vs. humans (yet).</b> Both arms are AI — this measures robustness to persona construction, and previews the variance question. The headline fidelity-to-humans result needs human data (Thy/Kaehl, per-participant).</li>
+        <li><b>N = 30, single run per arm (k=1).</b> The variance gap isn’t yet separated from run-to-run LLM noise — a small k=3 repeat would pin the noise floor. Per-participant correspondence is weak (r ≈ 0.2–0.4, CIs mostly include 0).</li>
+        <li><b>“Questionnaire-only”</b> still keeps the baseline self-report; what’s removed is Big-Five + RIASEC. The bot used the full profile in both arms, so only the participant persona changed.</li>
       </ul>
     </div>
   </section>
 
   <footer class="wrap">
     <div class="stat-strip">
-      <div class="stat"><span class="v" id="sN">20</span><span class="l">silicon participants</span></div>
-      <div class="stat"><span class="v">3</span><span class="l">persona depths × k=3 runs</span></div>
-      <div class="stat"><span class="v">0.64</span><span class="l">best agreement (continuity, D0)</span></div>
-      <div class="stat"><span class="v">0.82</span><span class="l">change-tracking (Δ continuity)</span></div>
+      <div class="stat"><span class="v">30</span><span class="l">silicon participants (paired)</span></div>
+      <div class="stat"><span class="v">≈½</span><span class="l">SD when profile stripped</span></div>
+      <div class="stat"><span class="v">3/4</span><span class="l">outcomes flatten (Levene p≤.05)</span></div>
+      <div class="stat"><span class="v">~0</span><span class="l">change in means (paired-t n.s.)</span></div>
     </div>
-    <p style="margin-top:22px">Participant model <b>claude-opus-4-6</b> · future-self bot &amp; judge <b>claude-sonnet-4-6</b> ·
-      profiles from an open RIASEC/Big-Five dataset (n=145,828). Reproduce with
-      <code>node run_silicon_cohort.mjs --n 30 --depths D0,D2,D3 --k 3</code>. Full metrics in the eval-pipeline report.
-      BSc Business Analytics thesis · UvA · 2026.</p>
   </footer>
 
 <script>
 const DATA = {
-  deltas:[{label:"Continuity",v:1.07},{label:"Vividness",v:3.15},{label:"Closeness",v:1.25}],
-  rho:{
-    "Continuity":{D0:0.64,D2:0.17,D3:0.13},
-    "Vividness":{D0:0.08,D2:0.02,D3:-0.03},
-    "Closeness":{D0:-0.17,D2:0.13,D3:0.09},
-    "Manip-checks":{D0:0.17,D2:-0.05,D3:0.01}
-  },
-  changeLevel:[
-    {label:"Continuity",change:0.82,level:0.01},
-    {label:"Vividness",change:0.41,level:0.00},
-    {label:"Closeness",change:0.13,level:0.03}
+  deltas:[{label:"Continuity",v:0.97},{label:"Vividness",v:2.38},{label:"Closeness",v:0.80}],
+  ablation:[
+    {o:"Continuity",   sd1:0.45, sd2:0.22, rat:0.48, vp:0.010,  mp:0.08},
+    {o:"Vividness",    sd1:0.58, sd2:0.29, rat:0.51, vp:0.0004, mp:0.47},
+    {o:"Closeness",    sd1:0.51, sd2:0.41, rat:0.80, vp:0.55,   mp:0.54},
+    {o:"Manip-checks", sd1:0.39, sd2:0.22, rat:0.57, vp:0.048,  mp:0.74}
   ],
-  bias:[{label:"Continuity",v:-1.33},{label:"Vividness",v:-1.52},{label:"Closeness",v:-0.27},{label:"Manip-checks",v:-2.16}],
   chat:[
-    {who:"Future self (Sonnet)",cls:"bot",t:"Hey. So this is a bit of a strange thing to type, but — I'm you. Ten years from now. Auditor, Amsterdam-based, currently drinking coffee that's gone slightly cold because I got distracted reviewing a client file."},
-    {who:"Silicon participant (Opus)",cls:"you",t:"Okay this is definitely weird haha but I'm kind of into it. So honestly — auditing is something I find really interesting but I barely know what the actual job looks like day to day. Right now in my courses I enjoy the analytical stuff, breaking things apart, figuring out where the numbers don't add up."},
-    {who:"Future self (Sonnet)",cls:"bot",t:"A normal Tuesday: I'm at the client's office — theirs, not ours, which matters — sitting across from their CFO and his assistant, going through the file. There's a half-second glance between them when I ask about one number. That glance is the job."},
-    {who:"Silicon participant (Opus)",cls:"you",t:"Okay that half-second glance thing is exactly the kind of stuff that gets me excited honestly. That's not just numbers, that's reading people too. I didn't even think about that side of it."}
+    {who:"Future self (Sonnet)",cls:"bot",t:"Hey. So… this is a little strange, right? Talking to yourself. I'm you — ten years from now. I've spent the last decade building a career as an auditor, and somehow here I am, trying to give you a feel for what it's actually like."},
+    {who:"Silicon participant",cls:"you",t:"okay yeah this is definitely strange lol. but also kind of cool? honestly I'm still figuring it out. like I know I like the idea of being the person in the room who actually sees what's going on — but I have no clue what the day-to-day is really like."},
+    {who:"Future self (Sonnet)",cls:"bot",t:"Okay real answer: it's both, and the ratio shifts a lot depending on where you are in your career. The first couple of years? Honestly, a lot of box-ticking. You're the most junior person on the team, you tie out numbers, you chase documents."},
+    {who:"Silicon participant",cls:"you",t:"okay that actually makes it sound more bearable than I expected. like if the boring stuff is basically training your instincts, that's a different frame than just... suffering through it."}
   ]
 };
-
-function pct(v,max){return Math.max(0,Math.min(100,(v/max)*100));}
+const pct = (v,max)=>Math.max(0,Math.min(100,(v/max)*100));
+const pval = (p)=> p<0.001 ? "<0.001" : p.toFixed(p<0.1?3:2);
 
 // Δ bars
 (function(){
-  const el=document.getElementById('deltaBars'), max=3.5;
+  const el=document.getElementById('deltaBars'), max=3;
   DATA.deltas.forEach(d=>{
     const row=document.createElement('div');row.className='bar-row';
     row.innerHTML=`<div class="bl">${d.label}</div><div class="track"><div class="fill" style="background:var(--accent)"></div></div><div class="bv">+${d.v.toFixed(2)}</div>`;
@@ -348,58 +295,27 @@ function pct(v,max){return Math.max(0,Math.min(100,(v/max)*100));}
   });
 })();
 
-// heatmap
+// SD-collapse paired bars
 (function(){
-  const el=document.getElementById('heat');
-  el.innerHTML=`<div></div><div class="hh">D0</div><div class="hh">D2</div><div class="hh">D3</div>`;
-  Object.entries(DATA.rho).forEach(([out,cells])=>{
-    const rl=document.createElement('div');rl.className='rl';rl.textContent=out;el.appendChild(rl);
-    ['D0','D2','D3'].forEach(d=>{
-      const v=cells[d];const c=document.createElement('div');c.className='cell';
-      let bg,fg;
-      if(v<=0){bg='var(--surface-3)';fg='var(--muted)';}
-      else{const a=Math.max(8,Math.min(100,(v/0.85)*100));bg=`color-mix(in oklch, var(--accent) ${a}%, var(--surface))`;fg=a>55?'#fff':'var(--ink)';}
-      c.style.background=bg;c.style.color=fg;c.textContent=(v>0?'':'')+v.toFixed(2);
-      el.appendChild(c);
-    });
-  });
-})();
-
-// change vs level
-(function(){
-  const el=document.getElementById('changeLevel');
-  DATA.changeLevel.forEach(d=>{
-    const row=document.createElement('div');row.className='cl-row';
-    row.innerHTML=`<div class="lab"><span>${d.label}</span><span class="nums">change ρ=${d.change.toFixed(2)} · level ICC=${d.level.toFixed(2)}</span></div>
-      <div class="cl-bars">
-        <div class="cl-mini"><span class="t">Change</span><div class="track"><div class="fill f1" style="background:var(--accent)"></div></div></div>
-        <div class="cl-mini"><span class="t">Level</span><div class="track"><div class="fill f2" style="background:var(--muted-2)"></div></div></div>
+  const el=document.getElementById('sdCollapse'), SDMAX=0.65;
+  DATA.ablation.forEach(d=>{
+    const sig=d.vp<=0.05;
+    const row=document.createElement('div');row.className='sd-row';
+    row.innerHTML=`
+      <div class="lab"><span>${d.o}</span><span class="meta ${sig?'sig':'nsig'}">SD ×${d.rat.toFixed(2)} · Levene p=${pval(d.vp)}${sig?' ✸':''} · means n.s. (p=${d.mp.toFixed(2)})</span></div>
+      <div class="sd-bars">
+        <div class="sd-mini"><span class="t">full</span><div class="track"><div class="fill f1" style="background:var(--accent)"></div></div><span class="v">${d.sd1.toFixed(2)}</span></div>
+        <div class="sd-mini"><span class="t">quest.</span><div class="track"><div class="fill f2" style="background:var(--muted-2)"></div></div><span class="v">${d.sd2.toFixed(2)}</span></div>
       </div>`;
     el.appendChild(row);
-    requestAnimationFrame(()=>{row.querySelector('.f1').style.width=pct(d.change,1)+'%';row.querySelector('.f2').style.width=pct(Math.max(d.level,0.004),1)+'%';});
-  });
-})();
-
-// bias diverging
-(function(){
-  const el=document.getElementById('biasBars'), max=2.5;
-  DATA.bias.forEach(d=>{
-    const row=document.createElement('div');row.className='dv-row';
-    row.innerHTML=`<div class="bl" style="font-size:13.5px;color:var(--ink-2)">${d.label}</div>
-      <div class="dv-track"><div class="dv-mid"></div><div class="dv-fill" style="background:var(--accent);right:50%"></div></div>
-      <div class="bv" style="font-family:var(--font-mono);font-size:12.5px;text-align:right">${d.v.toFixed(2)}</div>`;
-    el.appendChild(row);
-    requestAnimationFrame(()=>{row.querySelector('.dv-fill').style.width=(pct(Math.abs(d.v),max)/2)+'%';});
+    requestAnimationFrame(()=>{row.querySelector('.f1').style.width=pct(d.sd1,SDMAX)+'%';row.querySelector('.f2').style.width=pct(d.sd2,SDMAX)+'%';});
   });
 })();
 
 // chat
 (function(){
   const el=document.getElementById('chat');
-  DATA.chat.forEach(m=>{
-    const d=document.createElement('div');d.className='msg '+m.cls;
-    d.innerHTML=`<div class="who">${m.who}</div>${m.t}`;el.appendChild(d);
-  });
+  DATA.chat.forEach(m=>{const d=document.createElement('div');d.className='msg '+m.cls;d.innerHTML=`<div class="who">${m.who}</div>${m.t}`;el.appendChild(d);});
 })();
 
 // theme toggle
