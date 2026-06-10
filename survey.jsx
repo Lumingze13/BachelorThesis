@@ -16,35 +16,44 @@
 
 // --- Instrument definitions ------------------------------------------------
 
-const BFI10 = [
-  { id: 'bfi_e1', text: 'is reserved', trait: 'E', reverse: true },
-  { id: 'bfi_a1', text: 'is generally trusting', trait: 'A', reverse: false },
-  { id: 'bfi_c1', text: 'tends to be lazy', trait: 'C', reverse: true },
-  { id: 'bfi_n1', text: 'is relaxed, handles stress well', trait: 'N', reverse: true },
-  { id: 'bfi_o1', text: 'has few artistic interests', trait: 'O', reverse: true },
-  { id: 'bfi_e2', text: 'is outgoing, sociable', trait: 'E', reverse: false },
-  { id: 'bfi_a2', text: 'tends to find fault with others', trait: 'A', reverse: true },
-  { id: 'bfi_c2', text: 'does a thorough job', trait: 'C', reverse: false },
-  { id: 'bfi_n2', text: 'gets nervous easily', trait: 'N', reverse: false },
-  { id: 'bfi_o2', text: 'has an active imagination', trait: 'O', reverse: false },
+// Personality — Mini-IPIP (Donnellan et al., 2006; IPIP items, public domain).
+// 20 items, 4 per trait, 5-point accuracy. (R) = reverse-keyed (Build Plan §10.1a.)
+const MINIIPIP = [
+  { id: 'mip_e1', text: 'I am the life of the party.', trait: 'E', reverse: false },
+  { id: 'mip_a1', text: "I sympathize with others' feelings.", trait: 'A', reverse: false },
+  { id: 'mip_c1', text: 'I get chores done right away.', trait: 'C', reverse: false },
+  { id: 'mip_n1', text: 'I have frequent mood swings.', trait: 'N', reverse: false },
+  { id: 'mip_o1', text: 'I have a vivid imagination.', trait: 'O', reverse: false },
+  { id: 'mip_e2', text: 'I talk to a lot of different people at parties.', trait: 'E', reverse: false },
+  { id: 'mip_a2', text: "I feel others' emotions.", trait: 'A', reverse: false },
+  { id: 'mip_c2', text: 'I like order.', trait: 'C', reverse: false },
+  { id: 'mip_n2', text: 'I get upset easily.', trait: 'N', reverse: false },
+  { id: 'mip_o2', text: 'I have difficulty understanding abstract ideas.', trait: 'O', reverse: true },
+  { id: 'mip_e3', text: "I don't talk a lot.", trait: 'E', reverse: true },
+  { id: 'mip_a3', text: 'I am not really interested in others.', trait: 'A', reverse: true },
+  { id: 'mip_c3', text: 'I often forget to put things back in their proper place.', trait: 'C', reverse: true },
+  { id: 'mip_n3', text: 'I am relaxed most of the time.', trait: 'N', reverse: true },
+  { id: 'mip_o3', text: 'I am not interested in abstract ideas.', trait: 'O', reverse: true },
+  { id: 'mip_e4', text: 'I keep in the background.', trait: 'E', reverse: true },
+  { id: 'mip_a4', text: "I am not interested in other people's problems.", trait: 'A', reverse: true },
+  { id: 'mip_c4', text: 'I make a mess of things.', trait: 'C', reverse: true },
+  { id: 'mip_n4', text: 'I seldom feel blue.', trait: 'N', reverse: true },
+  { id: 'mip_o4', text: 'I do not have a good imagination.', trait: 'O', reverse: true },
 ];
-const BFI_SCALE = { points: 5, left: 'Disagree strongly', right: 'Agree strongly' };
+const MIP_SCALE = { points: 5, left: 'Very inaccurate', right: 'Very accurate' };
 
-// Each work value is rated for importance (not a forced top-3 pick) — per
-// supervisor + Shuai: "have all of them rated, however simple."
+// Work values — O*NET Work Values (US DOL; public domain). 6 items, rated 1–7
+// for importance; the top 3 are fed to the AI (Build Plan §10.1b). [FLAG] this
+// deviates from the brief's Schwartz PVQ → needs Shuai & Wendelien sign-off.
 const WORK_VALUE_ITEMS = [
-  { id: 'val_achievement', text: 'Achievement' },
-  { id: 'val_autonomy', text: 'Autonomy / self-direction' },
-  { id: 'val_security', text: 'Security / stability' },
-  { id: 'val_helping', text: 'Helping others' },
-  { id: 'val_influence', text: 'Influence / leadership' },
-  { id: 'val_variety', text: 'Variety / stimulation' },
-  { id: 'val_impact', text: 'Social impact' },
-  { id: 'val_creativity', text: 'Creativity' },
-  { id: 'val_financial', text: 'Financial reward' },
-  { id: 'val_balance', text: 'Work–life balance' },
+  { id: 'val_achievement', name: 'Achievement', text: 'Achievement — using your abilities and seeing the results of your effort; a sense of accomplishment' },
+  { id: 'val_independence', name: 'Independence', text: 'Independence — working on your own and making your own decisions' },
+  { id: 'val_recognition', name: 'Recognition', text: 'Recognition — advancement, leadership, prestige, and being looked up to' },
+  { id: 'val_relationships', name: 'Relationships', text: 'Relationships — friendly co-workers, being of service to others, and work that fits your values' },
+  { id: 'val_support', name: 'Support', text: 'Support — supportive management that stands behind you and treats people fairly' },
+  { id: 'val_conditions', name: 'Working Conditions', text: 'Working Conditions — job security, good pay, comfortable conditions, and variety' },
 ];
-const VALUE_SCALE = { points: 5, left: 'Not important', right: 'Essential' };
+const VALUE_SCALE = { points: 7, left: 'Not important', right: 'Extremely important' };
 
 const RIASEC = [
   { id: 'ria_R', key: 'R', text: 'building, fixing, or working with your hands and tools' },
@@ -236,32 +245,38 @@ function buildPreSections(answers, onChange) {
           <div className="sv-field">
             <span className="sv-label">Where are you in your studies?</span>
             <ChoiceField id="year" value={answers.year} onChange={set}
-              options={['First year', 'Second year', 'Something else']} />
+              options={['First year', 'Second year', 'Third year', 'Something else']} />
           </div>
+          <label className="sv-field">
+            <span className="sv-label">Programme / major</span>
+            <input className="sv-input" type="text"
+              value={answers.major === undefined ? 'Economics & Business' : answers.major}
+              onChange={(e) => set('major', e.target.value)} />
+          </label>
         </div>
       ),
     },
     {
       title: 'How you see yourself',
-      intro: 'I see myself as someone who… (rate each)',
-      ids: BFI10.map((i) => i.id),
-      node: <LikertGrid items={BFI10} scale={BFI_SCALE} prefix="…" answers={answers} onChange={set} />,
+      intro: 'How accurately do the following statements describe you, compared with other people you know of the same age? Rate each.',
+      ids: MINIIPIP.map((i) => i.id),
+      node: <LikertGrid items={MINIIPIP} scale={MIP_SCALE} answers={answers} onChange={set} />,
     },
     {
       title: 'What matters in work',
-      intro: 'How important is each of these to you in work? Rate every one.',
+      intro: 'How important is each of these in your ideal job? Rate every one.',
       ids: WORK_VALUE_ITEMS.map((i) => i.id),
       node: <LikertGrid items={WORK_VALUE_ITEMS} scale={VALUE_SCALE} answers={answers} onChange={set} />,
     },
     {
       title: 'What kind of work appeals',
-      intro: 'How much would you enjoy work that involves…',
+      intro: 'For each type of activity, indicate how much you would enjoy work that involves…',
       ids: RIASEC.map((i) => i.id),
       node: <LikertGrid items={RIASEC} scale={RIASEC_SCALE} answers={answers} onChange={set} />,
     },
     {
       title: 'Your future self, today',
-      intro: 'Before you meet them — how do you picture yourself about 10 years from now?',
+      intro: "By “your future self” we mean the version of you about 10 years from now. These questions capture how you picture that person today — you'll answer the same ones again after the conversation, so we can see what shifts.",
       ids: ['ios_pre', ...FSCS.map((i) => i.id), ...VIVIDNESS.map((i) => i.id)],
       node: (
         <div className="sv-section">
@@ -274,7 +289,7 @@ function buildPreSections(answers, onChange) {
   ];
 }
 
-function buildPostSections(answers, onChange, career) {
+function buildPostSections(answers, onChange, career, study = 'kangzhi') {
   const set = (id, v) => onChange(id, v);
   // Post future-self items reuse the SAME ids as pre but with a "_post" suffix.
   const fscsPost = FSCS.map((i) => ({ ...i, id: i.id + '_post' }));
@@ -282,7 +297,7 @@ function buildPostSections(answers, onChange, career) {
   return [
     {
       title: 'Your future self, now',
-      intro: 'After the conversation — how do you picture them now?',
+      intro: 'Now — after the conversation — how do you picture your future self (about 10 years from now)?',
       ids: ['ios_post', ...fscsPost.map((i) => i.id), ...vivPost.map((i) => i.id)],
       node: (
         <div className="sv-section">
@@ -314,6 +329,22 @@ function buildPostSections(answers, onChange, career) {
         </div>
       ),
     },
+    // Andrea's DV battery — labelled placeholder, only for study=andrea (Build
+    // Plan §10.2). Ships disabled until her CDSE-SF + agency/closeness items are
+    // confirmed; routing already supports her conditions.
+    ...(study === 'andrea' ? [{
+      title: 'Your career decision',
+      intro: 'A few questions about how you feel about choosing your path.',
+      ids: [],
+      node: (
+        <div className="sv-section">
+          <p className="sv-hint">
+            (Reserved for Andrea's dependent-variable battery — career-decision self-efficacy
+            (CDSE-SF) and agency/closeness. Disabled in this build until the items are confirmed.)
+          </p>
+        </div>
+      ),
+    }] : []),
     {
       title: 'One last thing',
       intro: 'Optional.',
@@ -387,10 +418,10 @@ function PreSurvey({ answers, onChange, onDone, onBack }) {
   );
 }
 
-function PostSurvey({ answers, onChange, onDone, career }) {
+function PostSurvey({ answers, onChange, onDone, career, study }) {
   return (
     <PagedSurvey eyebrow="Final step · Reflection"
-      sections={buildPostSections(answers, onChange, career)}
+      sections={buildPostSections(answers, onChange, career, study)}
       answers={answers} onChange={onChange} onDone={onDone} />
   );
 }
@@ -401,7 +432,7 @@ function scoreBigFive(a) {
   const rev = (x) => 6 - x;
   const out = {};
   for (const t of ['O', 'C', 'E', 'A', 'N']) {
-    const items = BFI10.filter((i) => i.trait === t);
+    const items = MINIIPIP.filter((i) => i.trait === t);
     const vals = items.map((i) => (i.reverse ? rev(Number(a[i.id])) : Number(a[i.id])));
     if (vals.every((v) => !Number.isNaN(v))) out[t] = vals.reduce((s, v) => s + v, 0) / vals.length;
   }
@@ -413,22 +444,21 @@ function scoreRiasec(a) {
   return out;
 }
 
-// Work values are now rated individually; distil the most important ones (>=4,
-// else the top 3) into the name list the prompts expect.
+// O*NET work values are rated 1–7; feed the AI the top 3 (Build Plan §10.1b).
 function topWorkValues(pre) {
   const rated = WORK_VALUE_ITEMS
-    .map((it) => ({ name: it.text, r: Number(pre[it.id]) }))
+    .map((it) => ({ name: it.name, r: Number(pre[it.id]) }))
     .filter((x) => !Number.isNaN(x.r));
   rated.sort((a, b) => b.r - a.r);
-  const important = rated.filter((x) => x.r >= 4).map((x) => x.name);
-  return important.length ? important : rated.slice(0, 3).map((x) => x.name);
+  return rated.slice(0, 3).map((x) => x.name);
 }
 
 // Build the structured profileData the backend prompts expect (career added later).
 function buildProfileData(pre) {
+  const major = pre.major === undefined ? 'Economics & Business' : (pre.major || 'Economics & Business');
   return {
     year: pre.year,
-    demographics: { age: pre.age, gender: pre.gender, major: 'Economics & Business' },
+    demographics: { age: pre.age, gender: pre.gender, major },
     bigFive: scoreBigFive(pre),
     values: topWorkValues(pre),
     riasec: scoreRiasec(pre),
