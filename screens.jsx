@@ -79,7 +79,9 @@ function Landing({ onBegin }) {
               This is a research prototype from a BSc Business Analytics thesis at the University of
               Amsterdam, grounded in Identity-Based Motivation (Oyserman) and Future Self-Continuity
               (Hershfield). You move at your own pace: there are rest points between parts, a break
-              reminder during long conversations, and your progress is saved as you go.
+              reminder during long conversations, and your progress is saved as you go. And once the
+              study questions are done, the session opens up — keep talking with your future self, or
+              step into entirely different careers, as many as you like.
             </p>
             <button className="btn accent" onClick={() => { setShowHow(false); onBegin(); }}>
               Begin

@@ -75,10 +75,12 @@ async function walk(viewport, tag) {
   await run(`clickEl(byText('I agree'))`); await t(); await shot('03_avatar');
   await run(`setVal(document.querySelector('.flow-body input'), 'Maya')`); await t();
   await run(`clickEl(byText('Continue'))`); await t(400);
-  // pre-survey, 6 pages; screenshot pages 1 and the circles page
-  for (let p = 0; p < 6; p++) {
+  // pre-survey, short pages; loop until the progress bar disappears
+  for (let p = 0; p < 15; p++) {
     await t(250);
+    if (!(await page.evaluate(`!!document.querySelector('.flow-progress')`))) break;
     if (p === 0) await shot('04_presurvey_p1');
+    if (p === 3) await shot('04b_presurvey_mid');
     const hasCircles = await page.evaluate(`!!document.querySelector('.sv-ios')`);
     if (hasCircles) await shot(`05_presurvey_circles_p${p + 1}`);
     await run(`autofill()`); await t(250);
@@ -96,16 +98,19 @@ async function walk(viewport, tag) {
   await run(`clickEl(document.querySelector('.composer .send'))`); await t(1000); await shot('12_chat_reply_chips');
   await run(`clickEl(byText('Finish'))`); await t(400); await shot('13_pause_cpost');
   await run(`clickEl(byText('Continue'))`); await t(400);
-  for (let p = 0; p < 5; p++) {
+  for (let p = 0; p < 12; p++) {
     await t(250);
+    if (!(await page.evaluate(`!!document.querySelector('.flow-progress')`))) break;
     if (p === 0) await shot('14_postsurvey_p1');
     await run(`autofill()`); await t(250);
     await run(`clickEl(byText('Done') || byText('Continue'))`);
   }
-  await t(500); await shot('15_free_continuation');
+  await t(500); await shot('14b_explore_hub');
+  await run(`clickEl(byText('Keep talking'))`); await t(600); await shot('15_free_continuation');
   await run(`setVal(document.querySelector('.composer textarea'), 'one more thing — do you still see your uni friends?')`); await t();
   await run(`clickEl(document.querySelector('.composer .send'))`); await t(900); await shot('16_free_reply');
-  await run(`clickEl(byText("I'm done"))`); await t(400); await shot('17_closure');
+  await run(`clickEl(byText("I'm done"))`); await t(400);
+  await run(`clickEl(byText('finish up'))`); await t(400); await shot('17_closure');
   await page.close();
 }
 

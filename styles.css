@@ -450,9 +450,12 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 .sv-textarea { resize: vertical; min-height: 64px; }
 .sv-hint { font-size: 12.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
 
-/* Survey page heading + instruction — the visual entry point of every page. */
-.sv-title { font-family: var(--font-serif); font-size: 27px; font-weight: 400; letter-spacing: -0.01em; line-height: 1.15; margin: 4px 0 10px; }
-.sv-instruction { font-size: 15.5px; line-height: 1.6; color: var(--ink-2); margin: 0 0 26px; max-width: 56ch; }
+/* Survey page heading block — centered and oversized so the page topic is the
+   unmistakable entry point, clearly distinct from the items below. */
+.sv-head { text-align: center; margin: 0 auto 30px; max-width: 58ch; }
+.sv-part { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.sv-title { font-family: var(--font-serif); font-size: clamp(30px, 4vw, 38px); font-weight: 400; letter-spacing: -0.015em; line-height: 1.12; margin: 0 0 12px; text-wrap: balance; }
+.sv-instruction { font-size: 16.5px; line-height: 1.6; color: var(--ink-2); margin: 0 auto; max-width: 52ch; text-wrap: pretty; }
 
 .sv-grid { display: flex; flex-direction: column; gap: 26px; }
 .sv-scale { display: flex; flex-direction: column; gap: 9px; }

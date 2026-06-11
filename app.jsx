@@ -104,6 +104,19 @@ function App() {
   const [pendingSnap, setPendingSnap] = useState(null); // saved snapshot awaiting resume-or-restart
   const phaseCSessionId = useRef(null);           // reused so free continuation = same convo
   const resumedC = useRef(false);                 // admin resume: seed the role-play with the saved transcript
+  // Post-study exploration (outside the analysis): repeated career picks +
+  // role-plays after the post-survey. Stored under freeContinuation.explorations.
+  const [exploreB, setExploreB] = useState(null); // current exploration career pick
+  const explorations = useRef([]);                // completed exploration runs
+
+  // Everything after the post-survey lives in the free_continuation section;
+  // one writer keeps free chat + explorations from clobbering each other.
+  const saveFreeSection = (fc, draft) => apiSaveSession(studyId.current, {
+    freeContinuation: {
+      ...(fc || freeCont || {}),
+      explorations: draft ? [...explorations.current, draft] : explorations.current,
+    },
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = tweaks.theme;
@@ -200,6 +213,7 @@ function App() {
     setProfile({ name: '', color: tweaks.accent });
     setPreAnswers({}); setPhaseB(null); setPhaseC(null); setPostAnswers({});
     setFreeCont(null); phaseCSessionId.current = null;
+    setExploreB(null); explorations.current = [];
     setScreen('landing');
   };
 
@@ -362,7 +376,7 @@ function App() {
       {screen === 'pause_cpost' && (
         <Pause title="Thank you."
           lines={[
-            "A few short questions about how that felt, then you're done.",
+            "A few short questions about how that felt — then the session opens up: you can keep chatting, or step into other careers, for as long as you like.",
             "Take a breath, and continue when you're ready.",
           ]}
           onContinue={() => setScreen('postsurvey')} />
@@ -380,8 +394,63 @@ function App() {
               },
               version: '3.1', finalize: true,
             });
-            setScreen('free');
+            setScreen('explore_hub');
           }} />
+      )}
+
+      {/* Post-study hub (everything from here is recorded but OUTSIDE the main
+          analysis): keep talking, step into other careers — repeatable — or end. */}
+      {screen === 'explore_hub' && (
+        <div className="flow">
+          <nav className="topnav"><div className="brand"><BrandMark size={22} /><span>Thesis</span></div><div className="end" /></nav>
+          <div className="flow-body">
+            <div className="sv-wrap" style={{ textAlign: 'center' }}>
+              <div className="eyebrow" style={{ justifyContent: 'center' }}><span className="dot" />Study questions done — this part is just for you</div>
+              <h2 className="consent-title">Keep exploring, if you like</h2>
+              <p className="sv-intro" style={{ maxWidth: '52ch', margin: '0 auto 24px' }}>
+                Your study session is complete and saved. From here on, nothing counts toward the research
+                analysis — it's still recorded, but it's your playground: keep the conversation going, or step
+                into entirely different careers, as many as you like.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+                <button className="btn accent" onClick={() => setScreen('free')}>
+                  Keep talking with {profile.name || 'your future self'} →
+                </button>
+                <button className="btn ghost" onClick={() => { setExploreB(null); setScreen('explore_b'); }}>
+                  Step into a different career →
+                </button>
+                <button className="btn ghost" onClick={() => setScreen('done')}>I'm done — finish up</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {screen === 'explore_b' && (
+        <PhaseB profileData={baseProfile} rec={rec}
+          onAutosave={() => {}}
+          onDone={(pb) => { setExploreB(pb); setScreen('explore_c'); }}
+          onBack={() => setScreen('explore_hub')} />
+      )}
+
+      {screen === 'explore_c' && (
+        <Chat profile={profile} mode="exploration" condition="main"
+          profileData={{ ...baseProfile, career: exploreB && exploreB.career, familiarity: exploreB && exploreB.familiarity, interestStrength: exploreB && exploreB.interestStrength }}
+          phaseBNotes={phaseBNotesFrom(exploreB)} location={exploreB && exploreB.location} career={exploreB && exploreB.career}
+          onSwitchCareer={() => setScreen('explore_b')}
+          onAutosave={(tr) => saveFreeSection(null, { career: exploreB && exploreB.career, transcript: tr, inProgress: true })}
+          onComplete={(pc) => {
+            explorations.current = [...explorations.current, {
+              career: (exploreB && exploreB.career) || null,
+              location: (exploreB && exploreB.location) || null,
+              phaseBTranscript: (exploreB && exploreB.transcript) || [],
+              transcript: pc.transcript, durationSec: pc.durationSec, turnCount: pc.turnCount,
+              ts: new Date().toISOString(),
+            }];
+            saveFreeSection(null, null);
+            setScreen('explore_hub');
+          }}
+          onExit={confirmRestart} />
       )}
 
       {screen === 'free' && (
@@ -389,8 +458,9 @@ function App() {
           history={(phaseC && phaseC.transcript) || []}
           condition={condition} profileData={fullProfile} phaseBNotes={phaseBNotesFrom(phaseB)}
           location={phaseB && phaseB.location}
-          onAutosave={(tr) => apiSaveSession(studyId.current, { freeContinuation: { transcript: tr } })}
-          onDone={(fc) => { setFreeCont(fc); apiSaveSession(studyId.current, { freeContinuation: fc }); setScreen('done'); }} />
+          onSwitchCareer={() => { setExploreB(null); setScreen('explore_b'); }}
+          onAutosave={(tr) => saveFreeSection({ transcript: tr }, null)}
+          onDone={(fc) => { setFreeCont(fc); saveFreeSection(fc, null); setScreen('explore_hub'); }} />
       )}
 
       {screen === 'done' && (
@@ -407,7 +477,7 @@ function App() {
             phaseB,
             phaseC,
             postSurvey: postAnswers,
-            freeContinuation: freeCont || {},
+            freeContinuation: { ...(freeCont || {}), explorations: explorations.current },
           }}
           onRestart={restart} />
       )}

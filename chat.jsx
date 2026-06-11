@@ -170,7 +170,11 @@ function mmss(min) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '', location = '', career: careerProp, seedTranscript = [], seedElapsedSec = 0, onComplete, onExit, onAutosave }) {
+function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '', location = '', career: careerProp, seedTranscript = [], seedElapsedSec = 0, mode = 'study', onSwitchCareer, onComplete, onExit, onAutosave }) {
+  // 'exploration' = the post-study playground (Build Plan §7 Screen 8b): same
+  // role-play, but outside the analysis — no clock, no 20/30-min policy, and a
+  // "choose another career" control instead of the study framing.
+  const isExplore = mode === 'exploration';
   const career = careerProp || profileData.career || 'this career';
   const initials = useMemo(
     () => (profile.name?.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '—').toUpperCase(),
@@ -212,8 +216,8 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
   useEffect(() => { if (!draft) autoGrowTA(taRef.current); }, [draft]);
 
   const elapsedMin = elapsedSec / 60;
-  const hard = elapsedMin >= HARD_MIN;
-  const soft = !hard && elapsedMin >= nextRest; // fires at 20 min and again every 20 if it continues
+  const hard = !isExplore && elapsedMin >= HARD_MIN;
+  const soft = !isExplore && !hard && elapsedMin >= nextRest; // fires at 20 min and again every 20 if it continues
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -379,7 +383,12 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
       <aside className="chat-side">
         <div className="brand"><BrandMark size={20}/><span>Thesis</span></div>
 
-        <div style={{padding: '0 4px'}}>
+        <div style={{padding: '0 4px', display: 'flex', flexDirection: 'column', gap: 6}}>
+          {isExplore && onSwitchCareer && (
+            <button className="btn ghost sm" style={{width: '100%', justifyContent: 'flex-start'}} onClick={onSwitchCareer} title="Pick a different career to step into">
+              ←&nbsp; Choose another career
+            </button>
+          )}
           <button className="btn ghost sm" style={{width: '100%', justifyContent: 'flex-start'}} onClick={onExit} title="Restart the study from the beginning">
             ↻&nbsp; Start over
           </button>
@@ -420,10 +429,13 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
           </div>
           <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
             <button className="header-restart" onClick={onExit} title="Start over from the beginning" aria-label="Start over">↻</button>
-            <span className="clock" title="Time in this conversation">{mmss(elapsedMin)}</span>
+            {!isExplore && <span className="clock" title="Time in this conversation">{mmss(elapsedMin)}</span>}
             <span className="chip"><span className="pulse"></span>A role-play · you decide</span>
-            <button className="btn accent sm" onClick={finish} title="Move on to the reflection">
-              Finish &amp; reflect
+            {isExplore && onSwitchCareer && (
+              <button className="btn ghost sm" onClick={onSwitchCareer} title="Pick a different career to step into">Other careers</button>
+            )}
+            <button className="btn accent sm" onClick={finish} title={isExplore ? 'Wrap up this future' : 'Move on to the reflection'}>
+              {isExplore ? 'Done with this future' : 'Finish & reflect'}
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
@@ -528,7 +540,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
    analysis. Optional; the participant is already "done".
    ============================================================ */
 function FreeContinuation({ profile = {}, career = 'this career', sessionId, history = [],
-  condition = 'main', profileData = {}, phaseBNotes = '', location = '', onDone, onAutosave }) {
+  condition = 'main', profileData = {}, phaseBNotes = '', location = '', onSwitchCareer, onDone, onAutosave }) {
   const { useState, useEffect, useRef } = React;
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
@@ -622,7 +634,14 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
     <div className="flow">
       <nav className="topnav">
         <div className="brand"><BrandMark size={22} /><span>Thesis</span></div>
-        <div className="end"><button className="btn accent sm" onClick={wrapUp}>I'm done →</button></div>
+        <div className="end">
+          {onSwitchCareer && (
+            <button className="btn ghost sm" onClick={onSwitchCareer} title="Step into a different career — just for you, outside the study">
+              Try another career
+            </button>
+          )}
+          <button className="btn accent sm" onClick={wrapUp}>I'm done →</button>
+        </div>
       </nav>
       <div className="flow-body">
         <div className="pb-wrap">
