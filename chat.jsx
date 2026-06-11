@@ -462,8 +462,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
             </button>
           </div>
           <div className="composer-foot">
-            <span className="clock" title="Time in this conversation">{mmss(elapsedMin)}</span>
-            {' · '}Ask anything — your future self is here to think it through with you.
+            Ask anything — your future self is here to think it through with you.
             {saveState && <span className="save-note">{saveState === 'saving' ? ' · Saving…' : ' · Progress saved ✓'}</span>}
           </div>
         </div>

@@ -490,8 +490,11 @@ function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow }) {
       </nav>
       <div className="flow-body">
         <div className="sv-wrap">
-          <div className="eyebrow"><span className="dot" />{s.title}</div>
-          {s.intro && <p className="sv-intro">{s.intro}</p>}
+          {/* Clear reading order (2026-06-11): a real page heading, then the
+              task instruction in body ink — the old tiny chip + grey line gave
+              the eye no entry point. */}
+          <h2 className="sv-title">{s.title}</h2>
+          {s.intro && <p className="sv-instruction">{s.intro}</p>}
           {s.node}
         </div>
       </div>

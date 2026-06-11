@@ -64,7 +64,7 @@ const sessions = new Map();
 // question still drew 300+ words). Identical across main/baseline; Phase B
 // (incl. Andrea's prompts) is never touched.
 const BREVITY_REMINDER =
-  'Keep this reply comfortable to read: about 2-3 short paragraphs (roughly 80-180 words), never a wall of text. At most one question, and only if it follows naturally from the conversation.';
+  'Keep this reply comfortable to read: about 2-3 short paragraphs (roughly 80-180 words), never a wall of text. At most one question, only if it follows naturally from the conversation, and bridged into with a connecting sentence — never dropped in cold.';
 
 /** Call the configured model with a system prompt + history; return assistant text. */
 async function complete(systemPrompt, messages, { remind = false } = {}) {
