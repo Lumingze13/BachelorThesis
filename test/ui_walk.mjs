@@ -1,5 +1,5 @@
 /* Full participant-flow walkthrough with a mocked backend — screenshots every
- * screen for visual QA. Run: node _uiwalk.mjs   (server must be on :3457) */
+ * screen for visual QA. Run: node test/ui_walk.mjs   (server must be on :3457) */
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 

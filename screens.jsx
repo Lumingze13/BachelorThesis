@@ -14,7 +14,7 @@ function Landing({ onBegin }) {
           <a href="#about" onClick={(e) => { e.preventDefault(); document.getElementById('about')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>About the study</a>
         </div>
         <div className="end">
-          <button className="btn ghost sm" onClick={onBegin}>Sign in</button>
+          <button className="btn ghost sm" onClick={onBegin}>Begin</button>
         </div>
       </nav>
 

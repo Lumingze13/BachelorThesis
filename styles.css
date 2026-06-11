@@ -338,6 +338,11 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 }
 .action-chip:hover { background: var(--accent-soft); }
 
+/* Quiet patience note under the typing dots once a reply runs long (the
+   reasoning model can take a while; bare dots read as "it broke"). Calm only —
+   §16 forbids pressure cues. */
+.slow-note { margin-top: 6px; font-size: 12px; color: var(--muted-2); }
+
 .typing { display: inline-flex; gap: 4px; align-items: center; padding: 6px 0; }
 .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-2); animation: bounce 1.2s infinite ease-in-out; }
 .typing span:nth-child(2) { animation-delay: .15s; }

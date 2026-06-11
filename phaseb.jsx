@@ -29,7 +29,10 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
   const sessionId = useRef(null);
   const scrollRef = useRef(null);
   const lockRef = useRef(null);
+  const taRef = useRef(null);
   const startedAt = useRef(Date.now());
+  const slowReply = useSlowPending(pending || booting); // shared with chat.jsx
+  useEffect(() => { if (!draft) autoGrowTA(taRef.current); }, [draft]);
 
   const restDue = elapsedMin >= nextRest; // gentle, recurring, dismissible (§7)
 
@@ -163,7 +166,7 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
               {(pending || booting) && (
                 <div className="msg future fade-in">
                   <div className="avatar"><BrandMark size={20} /></div>
-                  <div className="bubble"><div className="typing"><span></span><span></span><span></span></div></div>
+                  <div className="bubble"><TypingBubble slow={slowReply} /></div>
                 </div>
               )}
             </div>
@@ -219,9 +222,9 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
           </div>
         )}
         <div className="composer">
-          <textarea rows={1} placeholder={booting ? 'Connecting…' : 'Reply to the guide…'}
+          <textarea rows={1} ref={taRef} placeholder={booting ? 'Connecting…' : 'Reply to the guide…'}
             value={draft} disabled={booting}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => { setDraft(e.target.value); autoGrowTA(e.target); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(draft); } }} />
           <button className="send" disabled={!draft.trim() || pending || booting} onClick={() => send(draft)} aria-label="Send">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 11V3M3 7l4-4 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>

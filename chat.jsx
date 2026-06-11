@@ -109,6 +109,38 @@ function renderRich(text) {
   return out;
 }
 
+/* Auto-grow a composer textarea with its content (one line up to 200px) so
+ * longer thoughts don't scroll inside a single cramped row. */
+function autoGrowTA(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+/* True once `active` has been continuously true for `ms` — used to show a quiet
+ * patience note when a reply runs long (the reasoning model can take 15-40s;
+ * bare typing dots that long read as "it broke"). */
+function useSlowPending(active, ms = 9000) {
+  const [slow, setSlow] = React.useState(false);
+  React.useEffect(() => {
+    if (!active) { setSlow(false); return undefined; }
+    const t = setTimeout(() => setSlow(true), ms);
+    return () => clearTimeout(t);
+  }, [active]);
+  return slow;
+}
+
+/* Typing dots + the optional slow-reply note. Calm wording only — §16 forbids
+ * pressure cues. */
+function TypingBubble({ slow }) {
+  return (
+    <div>
+      <div className="typing"><span></span><span></span><span></span></div>
+      {slow && <div className="slow-note fade-in">Taking a moment — a thoughtful reply can take a little while.</div>}
+    </div>
+  );
+}
+
 // When the frontend is hosted separately (Vercel) from the API (Railway),
 // window.THESIS_API_BASE (set in config.js) points at the backend origin.
 // Empty string keeps relative paths so same-origin / local dev still works.
@@ -160,8 +192,13 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
   const [saveState, setSaveState] = useState('');      // '' | 'saving' | 'saved' (§13b autosave indicator)
   const [lastFailed, setLastFailed] = useState(null);  // failed user turn, for a clean "Try again" (§13b)
   const scrollRef = useRef(null);
+  const taRef = useRef(null);
   const sessionId = useRef(null);
   const startedAt = useRef(null);
+  const slowReply = useSlowPending(pending || booting);
+
+  // Reset the composer height after a send clears the draft programmatically.
+  useEffect(() => { if (!draft) autoGrowTA(taRef.current); }, [draft]);
 
   const hard = elapsedMin >= HARD_MIN;
   const soft = !hard && elapsedMin >= nextRest; // fires at 20 min and again every 20 if it continues
@@ -364,7 +401,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
             {(pending || booting) && (
               <div className="msg future fade-in">
                 <div className="avatar"><MiniAvatar initials={initials} color={profile.color} size={30}/></div>
-                <div className="bubble"><div className="typing"><span></span><span></span><span></span></div></div>
+                <div className="bubble"><TypingBubble slow={slowReply} /></div>
               </div>
             )}
 
@@ -399,10 +436,11 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
           <div className="composer">
             <textarea
               rows={1}
+              ref={taRef}
               placeholder={hard ? 'The conversation has ended — continue to reflect.' : booting ? 'Connecting to your future self…' : `Message ${profile.name || 'your future self'}…`}
               value={draft}
               disabled={booting || hard}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => { setDraft(e.target.value); autoGrowTA(e.target); }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(draft); } }}
             />
             <button className="send" disabled={!draft.trim() || pending || booting || hard} onClick={() => send(draft)} aria-label="Send">
@@ -438,6 +476,9 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
   const [error, setError] = useState(null);
   const startedAt = useRef(Date.now());
   const scrollRef = useRef(null);
+  const taRef = useRef(null);
+  const slowReply = useSlowPending(pending);
+  useEffect(() => { if (!draft) autoGrowTA(taRef.current); }, [draft]);
   const initials = ((profile.name || '').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || '—').toUpperCase();
 
   // The role-play transcript is shown (read-only) above the new messages so this
@@ -526,7 +567,7 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
               {pending && (
                 <div className="msg future fade-in">
                   <div className="avatar"><MiniAvatar initials={initials} color={profile.color} size={30} /></div>
-                  <div className="bubble"><div className="typing"><span></span><span></span><span></span></div></div>
+                  <div className="bubble"><TypingBubble slow={slowReply} /></div>
                 </div>
               )}
             </div>
@@ -537,8 +578,8 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
         {error && <div className="composer-error">{error}</div>}
         {!pending && <AskIdeas ideas={askIdeas} onPick={sendIdea} disabled={pending} />}
         <div className="composer">
-          <textarea rows={1} placeholder={`Message ${profile.name || 'your future self'}…`}
-            value={draft} onChange={(e) => setDraft(e.target.value)}
+          <textarea rows={1} ref={taRef} placeholder={`Message ${profile.name || 'your future self'}…`}
+            value={draft} onChange={(e) => { setDraft(e.target.value); autoGrowTA(e.target); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(draft); } }} />
           <button className="send" disabled={!draft.trim() || pending} onClick={() => send(draft)} aria-label="Send">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 11V3M3 7l4-4 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -550,4 +591,7 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
   );
 }
 
-Object.assign(window, { Chat, FreeContinuation, postJSON, splitParas, renderRich, buildOpening });
+Object.assign(window, {
+  Chat, FreeContinuation, postJSON, splitParas, renderRich, buildOpening,
+  autoGrowTA, useSlowPending, TypingBubble,
+});
