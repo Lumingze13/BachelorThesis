@@ -23,10 +23,11 @@ function qp(name) {
 }
 // Two orthogonal axes from the URL (Build Plan §6), locked for the session:
 //   condition / cond ∈ {main, baseline}   → stage-C role-play prompt
-//   rec ∈ {guide, reflective, direct}     → stage-B recommendation prompt
+//   rec ∈ {reflective, direct, guide}     → stage-B recommendation prompt
+//     (default = reflective, the working stage-B design; guide is the backup)
 //   study (analysis tag) + pid (prefixed id, e.g. K017) are recorded only.
 function readCondition() { const c = qp('condition') || qp('cond'); return c === 'baseline' ? 'baseline' : 'main'; }
-function readRec() { const r = qp('rec'); return ['guide', 'reflective', 'direct'].includes(r) ? r : 'guide'; }
+function readRec() { const r = qp('rec'); return ['guide', 'reflective', 'direct'].includes(r) ? r : 'reflective'; }
 function readStudy() { return qp('study') || 'kangzhi'; }
 function readPid() { return qp('pid') || null; }
 function readTestMode() { return qp('test') === '1'; }
@@ -73,6 +74,19 @@ function phaseBNotesFrom(pb) {
   ].filter(Boolean).join('\n');
 }
 
+/** Where an admin-resumed run should land, given its saved study object. */
+function resumeScreenFor(study) {
+  const has = (o) => o && Object.keys(o).length > 0;
+  if (!study) return 'landing';
+  if (study.meta && study.meta.status === 'completed') return 'done';
+  if (!(study.profile && study.profile.name)) return 'avatar';
+  if (!has(study.preSurvey)) return 'presurvey';
+  if (!(study.phaseB && study.phaseB.career)) return 'pause_ab';
+  if (has(study.postSurvey)) return 'postsurvey';
+  const cTurns = study.phaseC && Array.isArray(study.phaseC.transcript) && study.phaseC.transcript.length;
+  return cTurns ? 'roleplay' : 'pause_bc';
+}
+
 function App() {
   const [tweaks, setTweak] = useTweaks(DEFAULT_TWEAKS);
   const [condition] = useState(readCondition);
@@ -89,6 +103,7 @@ function App() {
   const [freeCont, setFreeCont] = useState(null); // free continuation (logged separately)
   const [pendingSnap, setPendingSnap] = useState(null); // saved snapshot awaiting resume-or-restart
   const phaseCSessionId = useRef(null);           // reused so free continuation = same convo
+  const resumedC = useRef(false);                 // admin resume: seed the role-play with the saved transcript
 
   useEffect(() => {
     document.documentElement.dataset.theme = tweaks.theme;
@@ -112,6 +127,27 @@ function App() {
     let snap = null;
     try { snap = JSON.parse(localStorage.getItem(PROGRESS_KEY) || 'null'); } catch (e) {}
     const existing = readSessionParam();
+    // Admin-initiated resume (?session=<id>&resume=1): hydrate the run from the
+    // SERVER row — works on any device, unlike the localStorage snapshot. The
+    // role-play transcript (if any) is re-seeded into the model so the future
+    // self remembers the earlier conversation.
+    if (existing && qp('resume') === '1' && !readTestMode()) {
+      studyId.current = existing;
+      (async () => {
+        try {
+          const r = await fetch(PERSIST_BASE + '/api/sessions/' + existing);
+          if (!r.ok) throw new Error('not found');
+          const study = await r.json();
+          if (study.profile && study.profile.name) setProfile((p) => ({ ...p, ...study.profile }));
+          if (study.preSurvey) setPreAnswers(study.preSurvey);
+          if (study.phaseB && (study.phaseB.career || (study.phaseB.transcript || []).length)) setPhaseB(study.phaseB);
+          if (study.phaseC && (study.phaseC.transcript || []).length) { setPhaseC(study.phaseC); resumedC.current = true; }
+          if (study.postSurvey && Object.keys(study.postSurvey).length) setPostAnswers(study.postSurvey);
+          setScreen(resumeScreenFor(study));
+        } catch (e) { setScreen('landing'); }
+      })();
+      return;
+    }
     if (!readTestMode() && snap && snap.screen && snap.screen !== 'landing' && snap.screen !== 'done') {
       // Offer an explicit resume-or-restart choice (Build Plan §13a) rather than
       // silently restoring — the participant decides to continue or start fresh.
@@ -292,6 +328,7 @@ function App() {
       {screen === 'roleplay' && (
         <Chat profile={profile} condition={condition} profileData={fullProfile}
           phaseBNotes={phaseBNotesFrom(phaseB)} location={phaseB && phaseB.location} career={phaseB && phaseB.career}
+          seedTranscript={(resumedC.current && phaseC && phaseC.transcript) || []}
           onAutosave={(tr) => apiSaveSession(studyId.current, { phaseC: { transcript: tr } })}
           onComplete={(pc, sid) => {
             setPhaseC(pc); phaseCSessionId.current = sid;

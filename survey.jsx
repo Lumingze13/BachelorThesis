@@ -226,7 +226,7 @@ function CirclesField({ id, text, hint, value, onChange }) {
 function IOSField({ id, value, onChange, career }) {
   return (
     <CirclesField id={id} value={value} onChange={onChange}
-      text={`Pick the pair of circles that best shows how close and overlapping you feel with your future self${career ? ` as a ${career}` : ''}.`}
+      text={`Pick the pair of circles that best shows how CLOSE AND OVERLAPPING you feel with your future self${career ? ` as a ${career}` : ''}.`}
       hint="Close and overlapping = how much that future person feels part of who you are." />
   );
 }

@@ -49,6 +49,8 @@ const PHASE_B_NUDGE =
   '(Begin the recommendation conversation now — greet me warmly and ask your first question.)';
 const PHASE_C_NUDGE =
   '(Begin the conversation now — send your first message to me as my future self.)';
+const PHASE_C_RESUME_NUDGE =
+  '(I had to step away earlier and am back now — pick our conversation back up naturally, briefly, without making a big deal of the gap.)';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const anthropic = USE_PROXY ? null : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -62,7 +64,7 @@ const sessions = new Map();
 // question still drew 300+ words). Identical across main/baseline; Phase B
 // (incl. Andrea's prompts) is never touched.
 const BREVITY_REMINDER =
-  'Length check before sending: at most 2 short paragraphs, roughly 60-110 words, at most one question. If your draft is longer, cut it.';
+  'Keep this reply comfortable to read: about 2-3 short paragraphs (roughly 80-180 words), never a wall of text. At most one question, and only if it follows naturally from the conversation.';
 
 /** Call the configured model with a system prompt + history; return assistant text. */
 async function complete(systemPrompt, messages, { remind = false } = {}) {
@@ -195,8 +197,9 @@ app.get(['/healthz', '/api/health'], async (req, res) => {
 
 app.post('/api/phase-b/session', async (req, res) => {
   try {
-    // `rec` (guide | reflective | direct) selects the Phase-B prompt (Build Plan §6).
-    const { profileData = {}, rec = 'guide' } = req.body || {};
+    // `rec` (reflective | direct | guide) selects the Phase-B prompt (Build Plan
+    // §6). Default = reflective (2026-06-11 decision; guide kept as backup).
+    const { profileData = {}, rec = 'reflective' } = req.body || {};
     const out = await openSession('b', pickPhaseBPrompt(rec, profileData), PHASE_B_NUDGE);
     res.json(out);
   } catch (err) {
@@ -209,13 +212,27 @@ app.post('/api/phase-b/session', async (req, res) => {
 
 app.post('/api/phase-c/session', async (req, res) => {
   try {
-    const { condition = 'main', profileData = {}, phaseBNotes = '', location = '' } = req.body || {};
+    const { condition = 'main', profileData = {}, phaseBNotes = '', location = '', priorTranscript = [] } = req.body || {};
     // Condition routing (Status Brief §3.3 / Build Plan §6): MAIN gets the full
     // profile + phase-b carry-over + location; BASELINE gets ONLY the chosen
     // career name + location (the chosen scenario is shared; the profile is not).
     const systemPrompt = condition === 'baseline'
       ? buildBaselinePrompt(profileData.career, location)
       : buildSystemPrompt(profileData, phaseBNotes, location);
+    // Admin-initiated RESUME of an interrupted role-play: the saved transcript
+    // is replayed into the model's history so the future self remembers the
+    // earlier conversation, then it re-opens with a brief, natural welcome-back.
+    if (Array.isArray(priorTranscript) && priorTranscript.length) {
+      const messages = priorTranscript
+        .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+        .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
+      messages.push({ role: 'user', content: PHASE_C_RESUME_NUDGE });
+      const opening = await complete(systemPrompt, messages, { remind: true });
+      messages.push({ role: 'assistant', content: opening });
+      const sessionId = crypto.randomUUID();
+      sessions.set(sessionId, { phase: 'c', systemPrompt, messages });
+      return res.json({ sessionId, opening, resumed: true });
+    }
     const out = await openSession('c', systemPrompt, PHASE_C_NUDGE);
     res.json(out);
   } catch (err) {

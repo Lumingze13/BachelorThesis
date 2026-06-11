@@ -40,7 +40,7 @@ function askedAlready(idea, userTexts) {
 }
 
 /* Pick `n` not-yet-used questions; recycle the pool once it runs dry. */
-function pickAskIdeas(used, n = 3, userTexts = []) {
+function pickAskIdeas(used, n = 4, userTexts = []) {
   let avail = ASK_POOL.map((_, i) => i).filter((i) => !used.has(i));
   if (avail.length < n) { used.clear(); avail = ASK_POOL.map((_, i) => i); }
   const fresh = avail.filter((i) => !askedAlready(ASK_POOL[i], userTexts));
@@ -52,17 +52,19 @@ function pickAskIdeas(used, n = 3, userTexts = []) {
   return picks;
 }
 
-/* Chip row above the composer: tap to send, or keep typing. */
+/* Idea cards above the composer: tap to send, or keep typing. */
 function AskIdeas({ ideas, onPick, disabled }) {
   if (!ideas || !ideas.length) return null;
   return (
     <div className="ask-row" aria-label="Suggested questions">
-      <span className="ask-lbl">Ideas to ask</span>
-      {ideas.map((i) => (
-        <button key={i} className="ask-chip" disabled={disabled} onClick={() => onPick(i)}>
-          {ASK_POOL[i]}
-        </button>
-      ))}
+      <div className="ask-lbl">Ideas to ask — or write your own below</div>
+      <div className="ask-grid">
+        {ideas.map((i) => (
+          <button key={i} className="ask-chip" disabled={disabled} onClick={() => onPick(i)}>
+            {ASK_POOL[i]}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -168,7 +170,7 @@ function mmss(min) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '', location = '', career: careerProp, onComplete, onExit, onAutosave }) {
+function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '', location = '', career: careerProp, seedTranscript = [], onComplete, onExit, onAutosave }) {
   const career = careerProp || profileData.career || 'this career';
   const initials = useMemo(
     () => (profile.name?.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '—').toUpperCase(),
@@ -231,23 +233,35 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
   }, [messages]);
 
   // Create the phase-c session (condition-routed) and fetch the opener on mount.
+  // When an admin-resumed run carries a saved transcript, it is replayed into the
+  // model's history server-side and rendered here, so the conversation continues
+  // with full memory instead of starting over.
   useEffect(() => {
     let cancelled = false;
+    const seed = (seedTranscript || [])
+      .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+      .map((m, i) => (m.role === 'user'
+        ? { role: 'user', text: m.text, id: `s${i}`, ts: m.ts || new Date().toISOString() }
+        : { role: 'future', paras: splitParas(m.text), id: `s${i}`, ts: m.ts || new Date().toISOString() }));
+    userTexts.current.push(...seed.filter((m) => m.role === 'user').map((m) => m.text));
     (async () => {
       setBooting(true);
       setError(null);
       try {
         const { sessionId: sid, opening: text } =
-          await postJSON('/api/phase-c/session', { condition, profileData, phaseBNotes, location });
+          await postJSON('/api/phase-c/session', {
+            condition, profileData, phaseBNotes, location,
+            priorTranscript: seed.length ? seedTranscript : undefined,
+          });
         if (cancelled) return;
         sessionId.current = sid;
         startedAt.current = Date.now();
-        setMessages([{ role: 'future', paras: splitParas(text), id: 'm0', ts: new Date().toISOString() }]);
-        setAskIdeas(pickAskIdeas(usedIdeas.current));
+        setMessages([...seed, { role: 'future', paras: splitParas(text), id: 'm0', ts: new Date().toISOString() }]);
+        setAskIdeas(pickAskIdeas(usedIdeas.current, 4, userTexts.current));
       } catch (e) {
         if (cancelled) return;
         startedAt.current = Date.now();
-        setMessages([{ role: 'future', paras: opening, id: 'm0', ts: new Date().toISOString() }]);
+        setMessages([...seed, { role: 'future', paras: opening, id: 'm0', ts: new Date().toISOString() }]);
         setError("Couldn't reach your future self — replies won't work until the server is running.");
       } finally {
         if (!cancelled) setBooting(false);
@@ -279,7 +293,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
     try {
       const { reply } = await postJSON('/api/chat', { sessionId: sessionId.current, message: t });
       setMessages(prev => [...prev, { role: 'future', paras: splitParas(reply), id: `f${Date.now()}`, ts: new Date().toISOString() }]);
-      setAskIdeas(pickAskIdeas(usedIdeas.current, 3, userTexts.current)); // fresh angles after every reply
+      setAskIdeas(pickAskIdeas(usedIdeas.current, 4, userTexts.current)); // fresh angles after every reply
       setLastFailed(null);
     } catch (e) {
       setLastFailed(t);
@@ -472,7 +486,7 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
   const [pending, setPending] = useState(false);
   const usedIdeas = useRef(new Set());
   const userTexts = useRef((history || []).filter((m) => m.role === 'user').map((m) => m.text || ''));
-  const [askIdeas, setAskIdeas] = useState(() => pickAskIdeas(usedIdeas.current, 3, userTexts.current));
+  const [askIdeas, setAskIdeas] = useState(() => pickAskIdeas(usedIdeas.current, 4, userTexts.current));
   const [error, setError] = useState(null);
   const startedAt = useRef(Date.now());
   const scrollRef = useRef(null);
@@ -521,10 +535,10 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
     try {
       const { reply } = await postJSON('/api/chat', { sessionId, message: t });
       setMessages((p) => [...p, { role: 'future', paras: splitParas(reply), id: `f${Date.now()}`, ts: new Date().toISOString() }]);
-      setAskIdeas(pickAskIdeas(usedIdeas.current, 3, userTexts.current));
+      setAskIdeas(pickAskIdeas(usedIdeas.current, 4, userTexts.current));
     } catch (e) {
       setError(e.message || 'Something went wrong. Please try again.');
-      setAskIdeas(pickAskIdeas(usedIdeas.current, 3, userTexts.current));
+      setAskIdeas(pickAskIdeas(usedIdeas.current, 4, userTexts.current));
     } finally { setPending(false); }
   };
 
