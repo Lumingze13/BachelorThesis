@@ -130,8 +130,24 @@ CIP-CCA placeholders (still pending verbatim items — unchanged blocker).
 - **Cross-device resume** (researcher tool): any session can be continued from the
   admin dashboard via a resume link; the run is rebuilt from the database on any
   device and an interrupted role-play is replayed into the model so the future
-  self keeps its memory. *Analysis note:* resumed runs restart `durationSec` at
-  the resume point; `turnCount` is cumulative; transcripts are cumulative.
+  self keeps its memory.
+- **Conversation-time measurement changed** (2026-06-11 late): `durationSec` is
+  now ACCUMULATED LIVE TIME — the stage-C clock pauses while the page is hidden
+  or closed, while a connection problem blocks replies, and at the hard cap, and
+  it continues from the saved value on every resume (same device or another).
+  Interruptions no longer consume the participant's 20/30-minute policy window,
+  and `durationSec` measures actual conversation exposure rather than wall time.
+  `turnCount` and transcripts are cumulative across resumes. Update the v4.2
+  measure definitions accordingly.
+- **Interruption robustness**: a server restart/redeploy mid-conversation no
+  longer breaks or resets anything — the chat silently rebuilds the model session
+  from the saved transcript (full memory, no greeting) and continues; the same
+  self-healing covers the post-survey free continuation (the "This chat has
+  ended" dead-end is gone). Exposure integrity preserved across infrastructure
+  events.
+- **Fielding workflow**: the admin dashboard gained a Launcher — choose the
+  chatbot version (study cell), mint N personal links with sequential participant
+  IDs in one click, copy the list, send one link per participant.
 - **Database misconfiguration diagnosed and RESOLVED** (2026-06-11 evening): the
   live `DATABASE_URL` pointed at localhost; Kangzhi set it to the
   `${{Postgres.DATABASE_URL}}` reference. `/healthz` now shows `"db": true`;

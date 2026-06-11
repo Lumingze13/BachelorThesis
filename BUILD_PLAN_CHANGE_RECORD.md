@@ -211,6 +211,40 @@ explicit instruction from Kangzhi that supersedes the v5.1 as-built text.
   eval-runs and simulations tabs (clean empty states), Resume links — all
   working; the DB banner is gone.
 
+## Round 5 (2026-06-11, late) — robustness: pausable clock, seamless recovery, admin launcher
+
+- **§11.4 Stage-C clock is now ACCUMULATED live time** [USER-ORDERED] [DEPLOYED]:
+  it ticks only while the conversation is actually usable — paused while the tab
+  is hidden or the page closed, while a connection error blocks replies, while
+  connecting, and at the hard cap. `durationSec` + `turnCount` ride with every
+  per-turn autosave (the `phase_c` JSONB is replaced whole, so they must), and
+  every resume path seeds the clock from the saved value. `durationSec` therefore
+  now measures *live conversation time* (pauses excluded) — analysis note for
+  v5.2.
+- **§11.2/§13a Seamless mid-chat recovery** [DEPLOYED]: the live LLM session is
+  in-memory and dies on a server restart/redeploy. `/api/phase-c/session` gained
+  a `silentResume` flag — seed the saved transcript into a fresh model session
+  with NO LLM call and NO greeting; the chat client auto-rebuilds on
+  "Unknown session" and retries the message once, so the participant notices
+  nothing (live-verified: the model continued a seeded thread mid-topic).
+- **§13a Snapshot resume merges the server row** [DEPLOYED]: "Continue my
+  session" now fetches the DB row and prefers its (longer) mid-chat transcript +
+  clock over the local snapshot, which never captured mid-role-play state —
+  fixes "after a redeploy, resume restarted the timer and cleared the whole
+  conversation".
+- **§7 Screen 8 free continuation self-heals** [USER-ORDERED] [DEPLOYED]: a
+  lost/absent live session (server restart, or a cross-device resume that landed
+  past the role-play) silently rebuilds a seeded phase-c session from role-play
+  history + free turns; the "This chat has ended — your study session is already
+  saved" dead-end is removed.
+- **§14 Admin** [USER-ORDERED] [DEPLOYED]: default theme dark (synced with the
+  participant app); button polish; new **Launcher tab** — pick the chatbot
+  version (the four intended study cells or a custom combo), set count + PID
+  prefix/start, mint N participant links in one click (sequential PIDs,
+  auto-advancing counter), copy the PID+link list; one link per participant.
+  Live-verified by minting and deleting three TST links.
+- `lib/sessions.js` rec fallback `guide` → `reflective` (consistency).
+
 ## Verification log (2026-06-11)
 
 - `npm test` (flow / reconstruct / admin-gate / db) green after every batch; admin
