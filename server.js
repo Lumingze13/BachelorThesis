@@ -37,7 +37,10 @@ const UVA_API_TOKEN = process.env.UVA_API_TOKEN || '';
 const USE_PROXY = Boolean(LLM_BASE_URL && UVA_API_TOKEN);
 const MODEL = process.env.MODEL_ID || (USE_PROXY ? 'gpt-5.1' : 'claude-sonnet-4-6');
 const TEMPERATURE = Number(process.env.LLM_TEMPERATURE ?? 0.9);
-const MAX_TOKENS = 1024;
+// Reply token cap. Must be generous: on reasoning models (gpt-5.1 via the UvA
+// proxy) hidden reasoning tokens count against this cap too, so a tight cap
+// truncates the VISIBLE reply mid-sentence ("the message suddenly cuts off").
+const MAX_TOKENS = Number(process.env.LLM_MAX_TOKENS ?? 4096);
 const REQUEST_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS ?? 90000);
 const PHASE_B_NUDGE =
   '(Begin the recommendation conversation now — greet me warmly and ask your first question.)';
@@ -86,7 +89,11 @@ async function completeOpenAI(systemPrompt, messages) {
       if (r.status === 429 || r.status >= 500) { lastErr = `upstream ${r.status}`; await sleep(1500 * (attempt + 1)); continue; }
       if (!r.ok) throw new Error(`upstream ${r.status}`);
       const data = await r.json();
-      return (data?.choices?.[0]?.message?.content || '').trim();
+      const choice = data?.choices?.[0];
+      if (choice?.finish_reason === 'length') {
+        console.warn(`[llm] reply hit the ${MAX_TOKENS}-token cap (finish_reason=length) — visible text may be cut off; raise LLM_MAX_TOKENS.`);
+      }
+      return (choice?.message?.content || '').trim();
     } catch (e) {
       if (e.message && e.message.includes('auth rejected')) throw e;
       lastErr = e.name === 'AbortError' ? 'timeout' : (e.message || 'network');

@@ -1,12 +1,57 @@
 /* Chat — the 10-year career future-self role-play (phase c) */
 const { useState, useEffect, useRef, useMemo } = React;
 
-const SUGGESTED = [
-  { lbl: 'A NORMAL DAY', text: 'What does an ordinary Tuesday actually look like for you?' },
-  { lbl: 'THE HARD PARTS', text: "What's the part of this work nobody warned me about?" },
-  { lbl: 'GETTING THERE', text: 'How did you go from where I am now to where you are?' },
-  { lbl: 'DOUBT', text: "Honestly I'm not sure this is right for me. Did you ever feel that?" },
+/* Question prompts offered as tappable chips after EVERY future-self reply, so a
+ * tired participant always has somewhere to go next — including angles they might
+ * not think to ask about. Deliberately a FIXED, neutral pool (identical across
+ * conditions) rather than model-generated, so the nudges can't differ between
+ * main and baseline. Free typing always stays available. */
+const ASK_POOL = [
+  'What does an ordinary Tuesday actually look like for you?',
+  "What's the hardest part nobody warned you about?",
+  'How did you get from where I am now to where you are?',
+  'Did you ever doubt this path?',
+  "How's the money — honestly?",
+  'What do your evenings and weekends look like?',
+  'What surprised you most about this work?',
+  'What skill should I start building now?',
+  'What was your first job after graduating?',
+  'What almost made you quit?',
+  'What would you do differently?',
+  'Who are the people around you these days?',
+  'Where are you living, and do you like it?',
+  'What does stress look like for you now?',
+  "What's a recent moment that made it feel worth it?",
+  'Is there a path you almost took instead?',
+  'What do you miss about being my age?',
+  'How do I know if this career is right for me?',
 ];
+
+/* Pick `n` not-yet-used questions; recycle the pool once it runs dry. */
+function pickAskIdeas(used, n = 3) {
+  let avail = ASK_POOL.map((_, i) => i).filter((i) => !used.has(i));
+  if (avail.length < n) { used.clear(); avail = ASK_POOL.map((_, i) => i); }
+  const picks = [];
+  while (picks.length < n && avail.length) {
+    picks.push(avail.splice(Math.floor(Math.random() * avail.length), 1)[0]);
+  }
+  return picks;
+}
+
+/* Chip row above the composer: tap to send, or keep typing. */
+function AskIdeas({ ideas, onPick, disabled }) {
+  if (!ideas || !ideas.length) return null;
+  return (
+    <div className="ask-row" aria-label="Suggested questions">
+      <span className="ask-lbl">Ideas to ask</span>
+      {ideas.map((i) => (
+        <button key={i} className="ask-chip" disabled={disabled} onClick={() => onPick(i)}>
+          {ASK_POOL[i]}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function buildOpening({ name, career, answers }) {
   const me = name || 'You';
@@ -92,7 +137,8 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
   const [booting, setBooting] = useState(true);
   const [pending, setPending] = useState(false);
   const [draft, setDraft] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [askIdeas, setAskIdeas] = useState([]);   // refreshed after every reply
+  const usedIdeas = useRef(new Set());
   const [error, setError] = useState(null);
   const [elapsedMin, setElapsedMin] = useState(0);
   const [nextRest, setNextRest] = useState(SOFT_MIN); // recurring rest prompt cadence (§11.4)
@@ -145,6 +191,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
         sessionId.current = sid;
         startedAt.current = Date.now();
         setMessages([{ role: 'future', paras: splitParas(text), id: 'm0', ts: new Date().toISOString() }]);
+        setAskIdeas(pickAskIdeas(usedIdeas.current));
       } catch (e) {
         if (cancelled) return;
         startedAt.current = Date.now();
@@ -180,6 +227,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
     try {
       const { reply } = await postJSON('/api/chat', { sessionId: sessionId.current, message: t });
       setMessages(prev => [...prev, { role: 'future', paras: splitParas(reply), id: `f${Date.now()}`, ts: new Date().toISOString() }]);
+      setAskIdeas(pickAskIdeas(usedIdeas.current)); // fresh angles after every reply
       setLastFailed(null);
     } catch (e) {
       setLastFailed(t);
@@ -195,9 +243,11 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
     if (!sessionId.current) { setError('No active session — reload to reconnect.'); return; }
     setMessages(prev => [...prev, { role: 'user', text: t, id: `u${Date.now()}`, ts: new Date().toISOString() }]);
     setDraft('');
-    setShowSuggestions(false);
+    setAskIdeas([]); // hide while the reply is in flight; refreshed on arrival
     await requestReply(t);
   };
+
+  const sendIdea = (i) => { usedIdeas.current.add(i); send(ASK_POOL[i]); };
 
   const retry = () => { if (lastFailed && !pending) requestReply(lastFailed); };
 
@@ -214,9 +264,8 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
         <div className="brand"><BrandMark size={20}/><span>Thesis</span></div>
 
         <div style={{padding: '0 4px'}}>
-          <button className="btn ghost sm" style={{width: '100%', justifyContent: 'flex-start'}} onClick={onExit}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2 6.5h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            New session
+          <button className="btn ghost sm" style={{width: '100%', justifyContent: 'flex-start'}} onClick={onExit} title="Restart the study from the beginning">
+            ↻&nbsp; Start over
           </button>
         </div>
 
@@ -302,16 +351,6 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
               </div>
             )}
 
-            {showSuggestions && !booting && (
-              <div className="suggested">
-                {SUGGESTED.map((s, i) => (
-                  <button key={i} className="suggest-btn" onClick={() => send(s.text)}>
-                    <span className="lbl">{s.lbl}</span>
-                    {s.text}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -337,6 +376,9 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
               <button className="link-btn" onClick={finish}>Continue →</button>
             </div>
           )}
+          {!booting && !pending && !hard && (
+            <AskIdeas ideas={askIdeas} onPick={sendIdea} disabled={pending || booting} />
+          )}
           <div className="composer">
             <textarea
               rows={1}
@@ -351,7 +393,8 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
             </button>
           </div>
           <div className="composer-foot">
-            Ask anything — your future self is here to think it through with you.
+            <span className="clock" title="Time in this conversation">{mmss(elapsedMin)}</span>
+            {' · '}Ask anything — your future self is here to think it through with you.
             {saveState && <span className="save-note">{saveState === 'saving' ? ' · Saving…' : ' · Progress saved ✓'}</span>}
           </div>
         </div>
@@ -367,17 +410,29 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
    the clock keeps counting, and it is logged SEPARATELY — never part of the main
    analysis. Optional; the participant is already "done".
    ============================================================ */
-function FreeContinuation({ profile = {}, career = 'this career', sessionId, onDone, onAutosave }) {
+function FreeContinuation({ profile = {}, career = 'this career', sessionId, history = [], onDone, onAutosave }) {
   const { useState, useEffect, useRef } = React;
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [pending, setPending] = useState(false);
+  const [askIdeas, setAskIdeas] = useState(() => pickAskIdeas(new Set()));
+  const usedIdeas = useRef(new Set());
   const [error, setError] = useState(null);
   const startedAt = useRef(Date.now());
   const scrollRef = useRef(null);
   const initials = ((profile.name || '').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || '—').toUpperCase();
 
+  // The role-play transcript is shown (read-only) above the new messages so this
+  // reads as the SAME conversation continuing — not a fresh chat with no memory.
+  // It is display-only: autosave below records only the NEW (free) turns.
+  const past = (history || []).map((m, i) => ({
+    role: m.role === 'user' ? 'user' : 'future',
+    text: m.text || '',
+    id: `h${i}`,
+  }));
+
   useEffect(() => { const el = scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages, pending]);
+  useEffect(() => { const el = scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, []); // start at the newest turn
 
   const toTranscript = (msgs) => msgs.map((m) => ({
     role: m.role === 'user' ? 'user' : 'future',
@@ -402,14 +457,18 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, onD
     if (!t || pending) return;
     if (!sessionId) { setError('This chat has ended — your study session is already saved.'); return; }
     setMessages((p) => [...p, { role: 'user', text: t, id: `u${Date.now()}`, ts: new Date().toISOString() }]);
-    setDraft(''); setPending(true); setError(null);
+    setDraft(''); setPending(true); setError(null); setAskIdeas([]);
     try {
       const { reply } = await postJSON('/api/chat', { sessionId, message: t });
       setMessages((p) => [...p, { role: 'future', paras: splitParas(reply), id: `f${Date.now()}`, ts: new Date().toISOString() }]);
+      setAskIdeas(pickAskIdeas(usedIdeas.current));
     } catch (e) {
       setError(e.message || 'Something went wrong. Please try again.');
+      setAskIdeas(pickAskIdeas(usedIdeas.current));
     } finally { setPending(false); }
   };
+
+  const sendIdea = (i) => { usedIdeas.current.add(i); send(ASK_POOL[i]); };
 
   return (
     <div className="flow">
@@ -428,6 +487,15 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, onD
           </div>
           <div className="pb-scroll" ref={scrollRef}>
             <div className="chat-thread">
+              {past.map((m) => (
+                <div key={m.id} className={`msg history ${m.role === 'user' ? 'user' : 'future'}`}>
+                  <div className="avatar">{m.role === 'user' ? (profile.name?.[0] || 'Y').toUpperCase() : <MiniAvatar initials={initials} color={profile.color} size={30} />}</div>
+                  <div style={{ minWidth: 0, flex: m.role === 'user' ? 'unset' : 1 }}>
+                    <div className="bubble">{m.role === 'future' ? splitParas(m.text).map((p, i) => <p key={i}>{renderRich(p)}</p>) : m.text}</div>
+                  </div>
+                </div>
+              ))}
+              {past.length > 0 && <div className="history-note">Your conversation continues</div>}
               {messages.map((m) => (
                 <div key={m.id} className={`msg ${m.role === 'user' ? 'user' : 'future'} fade-in`}>
                   <div className="avatar">{m.role === 'user' ? (profile.name?.[0] || 'Y').toUpperCase() : <MiniAvatar initials={initials} color={profile.color} size={30} />}</div>
@@ -448,6 +516,7 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, onD
       </div>
       <div className="composer-wrap pb-composer">
         {error && <div className="composer-error">{error}</div>}
+        {!pending && <AskIdeas ideas={askIdeas} onPick={sendIdea} disabled={pending} />}
         <div className="composer">
           <textarea rows={1} placeholder={`Message ${profile.name || 'your future self'}…`}
             value={draft} onChange={(e) => setDraft(e.target.value)}

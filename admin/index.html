@@ -155,7 +155,12 @@ async function api(path, opts = {}) {
   const r = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
   if (r.status === 401) { location.href = '/admin'; throw new Error('unauthorized'); }
   if (r.status === 503) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'unavailable'); }
-  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error((d.error || ('HTTP ' + r.status)) + (d.detail ? ' — ' + d.detail : '')); }
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    throw new Error((d.error || ('HTTP ' + r.status))
+      + (d.detail ? ' — ' + d.detail : '')
+      + (d.hint ? ' · Fix: ' + d.hint : ''));
+  }
   return r.json();
 }
 const short = (id) => (id || '').slice(0, 8);
@@ -607,6 +612,25 @@ function DescriptivesView() {
   );
 }
 
+// Every admin tab needs the database; when it's down each one fails with its own
+// cryptic error. One probe up front turns that into a single actionable banner.
+function DbHealthBanner() {
+  const [health, setHealth] = useState(null);
+  useEffect(() => {
+    fetch('/healthz').then((r) => r.json()).then(setHealth).catch(() => {});
+  }, []);
+  if (!health || health.db) return null;
+  const d = health.db_detail || {};
+  return (
+    <div className="note" style={{ margin: '18px 24px 0', maxWidth: 1132, marginLeft: 'auto', marginRight: 'auto',
+      borderColor: 'var(--accent)', background: 'var(--accent-soft)', color: 'var(--accent-ink)' }}>
+      <b>Database not connected</b> — every list / export below will fail until this is fixed.<br/>
+      Probe: <code>{d.reason || 'unknown'}</code>{d.host ? <> · target host <code>{d.host}</code></> : null}
+      {d.hint ? <><br/><b>Fix:</b> {d.hint}</> : null}
+    </div>
+  );
+}
+
 function App() {
   const [tab, setTab] = useState('sessions');
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
@@ -634,6 +658,7 @@ function App() {
         <button className="icon-btn" onClick={toggleTheme} title="Toggle light / dark">{dark ? '☀' : '☾'}</button>
         <button className="btn" onClick={logout}>Sign out</button>
       </header>
+      <DbHealthBanner />
       <main>{tab === 'sessions' ? <SessionsView /> : tab === 'desc' ? <DescriptivesView /> : tab === 'eval' ? <EvalView /> : <SimView />}</main>
     </div>
   );

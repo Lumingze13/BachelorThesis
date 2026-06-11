@@ -311,11 +311,13 @@ function Pause({ title, lines = [], cta = 'Continue', eyebrow = 'Take a breath',
    To match the Build Plan's opinionated defaults (A++/Dark/Roomy/Wide), change
    COMFORT_DEFAULTS + the theme default; kept neutral here so nothing looks off.
    ============================================================ */
-const COMFORT_KEY = 'thesis_comfort_v1';
-// Defaults per Build Plan §0: text A++ / theme Dark / reading font Serif /
-// spacing Roomy / width Wide / motion Full (participants can change any of them;
-// the theme default lives in DEFAULT_TWEAKS in app.jsx).
-const COMFORT_DEFAULTS = { size: 'lg', spacing: 'roomy', width: 'wide', motion: 'full', font: 'serif' };
+// v2 key: the default reading font changed serif → sans (user request 2026-06-11);
+// bumping the key applies the new default to devices that stored the old one.
+const COMFORT_KEY = 'thesis_comfort_v2';
+// Defaults: text A++ / spacing Roomy / width Wide / motion Full / reading font
+// SANS (serif stays available as a comfort option; the theme default lives in
+// DEFAULT_TWEAKS in app.jsx).
+const COMFORT_DEFAULTS = { size: 'lg', spacing: 'roomy', width: 'wide', motion: 'full', font: 'sans' };
 
 function ComfortSettings({ tweaks, setTweak }) {
   const [open, setOpen] = React.useState(false);

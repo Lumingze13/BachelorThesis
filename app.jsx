@@ -167,6 +167,15 @@ function App() {
     setScreen('landing');
   };
 
+  // One confirm-guarded restart shared by the floating fab AND the chat sidebar's
+  // "Start over" — a single misclick must never wipe a session in progress.
+  const confirmRestart = () => {
+    const ok = typeof window.confirm === 'function'
+      ? window.confirm('Restart from the beginning? Your current attempt will be left behind (it stays saved for the researcher) and a fresh one starts.')
+      : true;
+    if (ok) restart();
+  };
+
   // Resume-or-restart (Build Plan §13a): restore the saved snapshot, or start fresh.
   const resumeRun = () => {
     const s = pendingSnap || {};
@@ -289,7 +298,7 @@ function App() {
             apiSaveSession(studyId.current, { phaseC: pc });
             setScreen('pause_cpost');
           }}
-          onExit={restart} />
+          onExit={confirmRestart} />
       )}
 
       {screen === 'pause_cpost' && (
@@ -319,6 +328,7 @@ function App() {
 
       {screen === 'free' && (
         <FreeContinuation profile={profile} career={phaseB && phaseB.career} sessionId={phaseCSessionId.current}
+          history={(phaseC && phaseC.transcript) || []}
           onAutosave={(tr) => apiSaveSession(studyId.current, { freeContinuation: { transcript: tr } })}
           onDone={(fc) => { setFreeCont(fc); apiSaveSession(studyId.current, { freeContinuation: fc }); setScreen('done'); }} />
       )}
@@ -350,12 +360,7 @@ function App() {
       {/* Persistent "restart" chrome (§0): always available mid-run; warns that the
           current attempt is left behind (still saved for the researcher). */}
       {!['landing', 'launcher', 'resume_choice', 'done'].includes(screen) && (
-        <button className="restart-fab" title="Restart survey" onClick={() => {
-          const ok = typeof window.confirm === 'function'
-            ? window.confirm('Restart from the beginning? Your current attempt will be left behind (it stays saved for the researcher) and a fresh one starts.')
-            : true;
-          if (ok) restart();
-        }}>↻ Restart</button>
+        <button className="restart-fab" title="Restart survey" onClick={confirmRestart}>↻ Restart</button>
       )}
     </div>
   );
