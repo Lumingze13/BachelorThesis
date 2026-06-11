@@ -614,21 +614,31 @@ const LAUNCH_CELLS = [
   { key: 'custom', label: 'Custom combination', custom: true, prefix: 'X' },
 ];
 
-function LauncherView() {
+// Generated batches survive tab switches and reloads (they used to vanish the
+// moment the view unmounted).
+const BATCH_KEY = 'admin_recruit_batches_v1';
+const readBatches = () => { try { return JSON.parse(localStorage.getItem(BATCH_KEY) || '[]'); } catch (e) { return []; } };
+const writeBatches = (b) => { try { localStorage.setItem(BATCH_KEY, JSON.stringify(b.slice(0, 30))); } catch (e) {} };
+
+function RecruitView() {
   const [cellKey, setCellKey] = useState('k-main');
   const [custom, setCustom] = useState({ study: 'kangzhi', rec: 'reflective', cond: 'main' });
   const [count, setCount] = useState(5);
   const [prefix, setPrefix] = useState('K');
   const [start, setStart] = useState(1);
   const [busy, setBusy] = useState(false);
-  const [out, setOut] = useState([]);
-  const [copied, setCopied] = useState(false);
+  const [batches, setBatches] = useState(readBatches);
+  const [copied, setCopied] = useState(null);
   const [err, setErr] = useState(null);
   const cell = LAUNCH_CELLS.find((c) => c.key === cellKey);
   const axes = cell.custom ? custom : cell;
-  const pick = (c) => { setCellKey(c.key); setPrefix(c.prefix); setOut([]); setCopied(false); };
+  const pick = (c) => { setCellKey(c.key); setPrefix(c.prefix); setCopied(null); };
+  const previewUrl = () => {
+    const q = new URLSearchParams({ cond: axes.cond, rec: axes.rec, study: axes.study, preview: '1' });
+    return location.origin + '/?' + q.toString();
+  };
   const generate = async () => {
-    setBusy(true); setErr(null); setCopied(false);
+    setBusy(true); setErr(null); setCopied(null);
     const lines = [];
     try {
       const n = Math.max(1, Math.min(50, Number(count) || 1));
@@ -639,21 +649,28 @@ function LauncherView() {
         }) });
         lines.push({ pid: pid || short(d.id), link: location.origin + d.link });
       }
-      setOut(lines);
+      const batch = { ts: new Date().toISOString(), label: `${axes.study} · ${axes.rec} × ${axes.cond}`, lines };
+      const next = [batch, ...batches];
+      setBatches(next); writeBatches(next);
       if (prefix.trim()) setStart(Number(start) + lines.length);
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
-  const copyAll = () => {
-    navigator.clipboard.writeText(out.map((l) => l.pid + '\t' + l.link).join('\n'));
-    setCopied(true);
+  const copyBatch = (i) => {
+    navigator.clipboard.writeText(batches[i].lines.map((l) => l.pid + '\t' + l.link).join('\n'));
+    setCopied(i);
+  };
+  const removeBatch = (i) => {
+    const next = batches.filter((_, j) => j !== i);
+    setBatches(next); writeBatches(next);
   };
   return (
     <div>
       <div className="note">
-        <b>Participant launcher</b> — pick the chatbot version (study cell), mint as many personal links
+        <b>Recruit participants</b> — pick the chatbot version (study cell), mint as many personal links
         as you need, and send <b>one link to one participant</b>. Each link locks its condition and carries
         a sequential participant ID; the session row appears under Sessions the moment they consent.
+        Generated batches stay here (stored in this browser) until you remove them.
       </div>
       <div className="panel" style={{ marginBottom: 16 }}>
         <h3>1 · Chatbot version</h3>
@@ -677,6 +694,12 @@ function LauncherView() {
             </label>
           </div>
         )}
+        <div className="row" style={{ marginBottom: 4 }}>
+          <a className="btn" href={previewUrl()} target="_blank" rel="noreferrer"
+            title="Open this combination as a test drive: nothing is saved, and every step can be skipped without filling anything in.">
+            Test drive this version ↗ <span className="muted">(no data saved)</span>
+          </a>
+        </div>
         <h3 style={{ marginTop: 14 }}>2 · How many participants</h3>
         <div className="row">
           <label>Links <input type="number" min="1" max="50" value={count} onChange={(e) => setCount(e.target.value)} style={{ width: 64 }} /></label>
@@ -686,20 +709,21 @@ function LauncherView() {
           {err && <span className="err-inline">{err}</span>}
         </div>
       </div>
-      {out.length > 0 && (
-        <div className="panel">
-          <h3>{out.length} link{out.length > 1 ? 's' : ''} · {axes.study} · {axes.rec} × {axes.cond}</h3>
+      {batches.map((b, i) => (
+        <div className="panel" style={{ marginBottom: 14 }} key={b.ts}>
+          <h3>{b.lines.length} link{b.lines.length > 1 ? 's' : ''} · {b.label} · {fmt(b.ts)}</h3>
           <div className="row" style={{ marginBottom: 10 }}>
-            <button className="btn" onClick={copyAll}>{copied ? 'Copied ✓' : 'Copy all (PID + link)'}</button>
+            <button className="btn" onClick={() => copyBatch(i)}>{copied === i ? 'Copied ✓' : 'Copy all (PID + link)'}</button>
+            <button className="btn danger" onClick={() => removeBatch(i)}>Remove from this list</button>
           </div>
-          <div className="kv kv-scroll" style={{ gridTemplateColumns: 'max-content 1fr', maxHeight: 380 }}>
-            {out.map((l) => [
+          <div className="kv kv-scroll" style={{ gridTemplateColumns: 'max-content 1fr', maxHeight: 320 }}>
+            {b.lines.map((l) => [
               <b key={l.pid + 'k'}>{l.pid}</b>,
               <span key={l.pid + 'v'}><a href={l.link} target="_blank" rel="noreferrer">{l.link}</a></span>,
             ])}
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -777,7 +801,7 @@ function DbHealthBanner() {
 }
 
 function App() {
-  const [tab, setTab] = useState('sessions');
+  const [tab, setTab] = useState('recruit');
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   const toggleTheme = () => {
     const next = dark ? 'light' : 'dark';
@@ -792,8 +816,8 @@ function App() {
         <span className="brand"><span className="dot"></span>Thesis</span>
         <span className="eyebrow-tag">Study admin</span>
         <div className="tabs">
+          <div className={'tab' + (tab === 'recruit' ? ' on' : '')} onClick={() => setTab('recruit')}>Recruit</div>
           <div className={'tab' + (tab === 'sessions' ? ' on' : '')} onClick={() => setTab('sessions')}>Sessions</div>
-          <div className={'tab' + (tab === 'launch' ? ' on' : '')} onClick={() => setTab('launch')}>Launcher</div>
           <div className={'tab' + (tab === 'desc' ? ' on' : '')} onClick={() => setTab('desc')}>Descriptives</div>
           <div className={'tab' + (tab === 'eval' ? ' on' : '')} onClick={() => setTab('eval')}>Eval runs</div>
           <div className={'tab' + (tab === 'sim' ? ' on' : '')} onClick={() => setTab('sim')}>Simulations</div>
@@ -805,7 +829,7 @@ function App() {
         <button className="btn" onClick={logout}>Sign out</button>
       </header>
       <DbHealthBanner />
-      <main>{tab === 'sessions' ? <SessionsView /> : tab === 'launch' ? <LauncherView /> : tab === 'desc' ? <DescriptivesView /> : tab === 'eval' ? <EvalView /> : <SimView />}</main>
+      <main>{tab === 'recruit' ? <RecruitView /> : tab === 'sessions' ? <SessionsView /> : tab === 'desc' ? <DescriptivesView /> : tab === 'eval' ? <EvalView /> : <SimView />}</main>
     </div>
   );
 }

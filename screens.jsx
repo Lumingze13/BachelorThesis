@@ -281,7 +281,7 @@ function Consent({ onAgree, onBack }) {
           Back
         </button>
         <span className="step-label">Consent</span>
-        <button className="btn accent" disabled={!checked} onClick={onAgree}>
+        <button className="btn accent" disabled={!checked && !(typeof window !== 'undefined' && window.THESIS_PREVIEW)} onClick={onAgree}>
           I agree — continue
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>

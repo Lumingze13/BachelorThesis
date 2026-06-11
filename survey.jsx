@@ -510,14 +510,37 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
 
 // --- Paged survey container ------------------------------------------------
 
-function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow }) {
+const SVPAGE_KEY = 'thesis_svpage_v1';
+const readSvPage = (k) => {
+  try { return Number(JSON.parse(localStorage.getItem(SVPAGE_KEY) || '{}')[k]) || 0; } catch (e) { return 0; }
+};
+const writeSvPage = (k, n) => {
+  try {
+    const o = JSON.parse(localStorage.getItem(SVPAGE_KEY) || '{}');
+    if (n == null) delete o[k]; else o[k] = n;
+    localStorage.setItem(SVPAGE_KEY, JSON.stringify(o));
+  } catch (e) { /* storage unavailable */ }
+};
+
+function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow, storageKey }) {
   const { useState } = React;
-  const [page, setPage] = useState(0);
-  const s = sections[page];
-  const complete = sectionComplete(s.ids, answers);
+  const isPreview = typeof window !== 'undefined' && window.THESIS_PREVIEW;
+  // Remember the page index across refreshes (§13a) — answers were already
+  // restored, but landing back on page 1 of 9 read as "starting over".
+  const [page, setPageRaw] = useState(() => {
+    const n = storageKey && !isPreview ? readSvPage(storageKey) : 0;
+    return Math.min(Math.max(0, n), sections.length - 1);
+  });
+  const setPage = (n) => { setPageRaw(n); if (storageKey && !isPreview) writeSvPage(storageKey, n); };
+  const s = sections[Math.min(page, sections.length - 1)];
+  // Preview mode (researcher test drive): every page may be skipped unfilled.
+  const complete = isPreview || sectionComplete(s.ids, answers);
   const isLast = page === sections.length - 1;
 
-  const next = () => { if (isLast) onDone(); else { setPage(page + 1); window.scrollTo(0, 0); } };
+  const next = () => {
+    if (isLast) { if (storageKey) writeSvPage(storageKey, null); onDone(); }
+    else { setPage(page + 1); window.scrollTo(0, 0); }
+  };
   const back = () => { if (page === 0) onBack && onBack(); else { setPage(page - 1); window.scrollTo(0, 0); } };
 
   return (
@@ -561,7 +584,7 @@ function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow }) {
 
 function PreSurvey({ answers, onChange, onDone, onBack }) {
   return (
-    <PagedSurvey eyebrow="Step 02 · Pre-survey"
+    <PagedSurvey eyebrow="Step 02 · Pre-survey" storageKey="pre"
       sections={buildPreSections(answers, onChange)}
       answers={answers} onChange={onChange} onDone={onDone} onBack={onBack} />
   );
@@ -569,7 +592,7 @@ function PreSurvey({ answers, onChange, onDone, onBack }) {
 
 function PostSurvey({ answers, onChange, onDone, career, study }) {
   return (
-    <PagedSurvey eyebrow="Final step · Reflection"
+    <PagedSurvey eyebrow="Final step · Reflection" storageKey="post"
       sections={buildPostSections(answers, onChange, career, study)}
       answers={answers} onChange={onChange} onDone={onDone} />
   );

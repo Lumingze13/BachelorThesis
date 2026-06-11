@@ -199,7 +199,18 @@ app.post('/api/phase-b/session', async (req, res) => {
   try {
     // `rec` (reflective | direct | guide) selects the Phase-B prompt (Build Plan
     // §6). Default = reflective (2026-06-11 decision; guide kept as backup).
-    const { profileData = {}, rec = 'reflective' } = req.body || {};
+    const { profileData = {}, rec = 'reflective', priorTranscript = [] } = req.body || {};
+    // Resume after a refresh/restart mid-recommendation-chat: replay the saved
+    // transcript into a fresh model session (silently — the guide's last message
+    // is already on screen) so the conversation continues instead of restarting.
+    if (Array.isArray(priorTranscript) && priorTranscript.length) {
+      const messages = priorTranscript
+        .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+        .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
+      const sessionId = crypto.randomUUID();
+      sessions.set(sessionId, { phase: 'b', systemPrompt: pickPhaseBPrompt(rec, profileData), messages });
+      return res.json({ sessionId, opening: null, resumed: true });
+    }
     const out = await openSession('b', pickPhaseBPrompt(rec, profileData), PHASE_B_NUDGE);
     res.json(out);
   } catch (err) {
@@ -248,6 +259,29 @@ app.post('/api/phase-c/session', async (req, res) => {
   } catch (err) {
     console.error('POST /api/phase-c/session failed:', err?.message || err);
     res.status(502).json({ error: 'Could not reach your future self. Please try again.' });
+  }
+});
+
+// --- Career sanity check (stage-B lock-in gate) ----------------------------
+// Free-typed careers are judged by the model before the role-play can start —
+// "haha" must not become a future self. FAIL-OPEN: if the check itself errors,
+// the participant is never blocked.
+const CAREER_CHECK_PROMPT = `You check whether a participant's short free-text answer names a plausible career, job, occupation, or professional direction (e.g. "data analyst", "high school teacher", "startup founder", "marine biologist"). Be permissive: misspellings, broad fields ("finance", "something with sustainability"), and niche or emerging roles all count. Gibberish, jokes, greetings, single random words that are not occupations, refusals, or clearly non-career answers do not.
+Reply with ONLY a JSON object, nothing else:
+{"ok": true} — if it plausibly names a career or professional direction
+{"ok": false, "hint": "<one short, friendly sentence (max 20 words) asking them to name a career>"} — if not`;
+
+app.post('/api/validate-career', async (req, res) => {
+  const career = ((req.body || {}).career || '').toString().trim().slice(0, 120);
+  if (!career) return res.json({ ok: false, hint: 'Type the career you want to step into.' });
+  try {
+    const out = await complete(CAREER_CHECK_PROMPT, [{ role: 'user', content: career }]);
+    const m = out.match(/\{[\s\S]*\}/);
+    const parsed = m ? JSON.parse(m[0]) : { ok: true };
+    res.json({ ok: parsed.ok !== false, hint: typeof parsed.hint === 'string' ? parsed.hint.slice(0, 200) : undefined });
+  } catch (err) {
+    console.warn('validate-career failed open:', err?.message || err);
+    res.json({ ok: true, failOpen: true });
   }
 });
 

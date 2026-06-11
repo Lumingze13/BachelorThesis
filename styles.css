@@ -373,6 +373,16 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 }
 .action-chip:hover { background: var(--accent-soft); }
 
+/* Researcher preview badge (?preview=1): always-visible reminder that this run
+   saves nothing and validation is off. */
+.preview-badge {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 80;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em;
+  padding: 5px 14px; border-radius: var(--radius-pill);
+  background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent);
+  pointer-events: none;
+}
+
 /* Quiet patience note under the typing dots once a reply runs long (the
    reasoning model can take a while; bare dots read as "it broke"). Calm only —
    §16 forbids pressure cues. */

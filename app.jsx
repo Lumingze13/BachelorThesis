@@ -31,6 +31,11 @@ function readRec() { const r = qp('rec'); return ['guide', 'reflective', 'direct
 function readStudy() { return qp('study') || 'kangzhi'; }
 function readPid() { return qp('pid') || null; }
 function readTestMode() { return qp('test') === '1'; }
+// Preview (?preview=1, minted from the admin Recruit tab): a researcher test
+// drive — NOTHING is saved (no session row, no autosaves, no local snapshot)
+// and every gate/validation can be skipped, so the whole flow can be clicked
+// through without filling anything in. Never sent to participants.
+function readPreview() { return qp('preview') === '1'; }
 
 // --- Persistence (additive; never blocks or alters the participant UX) ------
 // The study session is saved to Postgres via the backend. All calls are
@@ -94,6 +99,8 @@ function App() {
   const [study] = useState(readStudy);
   const [pid] = useState(readPid);
   const [testMode] = useState(readTestMode);
+  const [preview] = useState(readPreview);
+  if (typeof window !== 'undefined') window.THESIS_PREVIEW = preview; // read by gates in screens/survey/phaseb
   const [screen, setScreen] = useState(() => (readTestMode() ? 'launcher' : 'landing'));
   const [profile, setProfile] = useState({ name: '', color: '#b5552f' });
   const [preAnswers, setPreAnswers] = useState({});
@@ -144,6 +151,7 @@ function App() {
     // SERVER row — works on any device, unlike the localStorage snapshot. The
     // role-play transcript (if any) is re-seeded into the model so the future
     // self remembers the earlier conversation.
+    if (readPreview()) return; // preview: always start clean, adopt nothing
     if (existing && qp('resume') === '1' && !readTestMode()) {
       studyId.current = existing;
       (async () => {
@@ -176,8 +184,9 @@ function App() {
 
   // First write happens only after the participant agrees (§15: no data before
   // consent). Admin-created links already carry an id; never create twice.
+  // Preview runs never create a row at all.
   const beginAfterConsent = () => {
-    if (!studyId.current) {
+    if (!studyId.current && !preview) {
       apiCreateSession({ condition, rec, study, pid }).then((id) => { studyId.current = id; });
     }
     setScreen('avatar');
@@ -189,6 +198,7 @@ function App() {
     // onward). Landing/consent/avatar/launcher/resume aren't an "in-progress run"
     // to resume into (§13a), and we don't want a consent-screen refresh to pop the
     // resume-or-restart choice.
+    if (preview) return; // test drives leave no trace
     if (['landing', 'consent', 'avatar', 'resume_choice', 'launcher'].includes(screen)) return;
     try {
       if (screen === 'done') { localStorage.removeItem(PROGRESS_KEY); return; }
@@ -208,7 +218,7 @@ function App() {
     : baseProfile;
 
   const restart = () => {
-    try { localStorage.removeItem(PROGRESS_KEY); } catch (e) {}
+    try { localStorage.removeItem(PROGRESS_KEY); localStorage.removeItem('thesis_svpage_v1'); } catch (e) {}
     studyId.current = null; // a fresh session row is created at the next consent (§15)
     setProfile({ name: '', color: tweaks.accent });
     setPreAnswers({}); setPhaseB(null); setPhaseC(null); setPostAnswers({});
@@ -308,7 +318,7 @@ function App() {
               Back
             </button>
             <span className="step-label">STEP 01</span>
-            <button className="btn accent" disabled={!profile.name.trim()} onClick={() => setScreen('presurvey')}>
+            <button className="btn accent" disabled={!profile.name.trim() && !preview} onClick={() => setScreen('presurvey')}>
               Continue
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
@@ -345,6 +355,7 @@ function App() {
 
       {screen === 'phaseb' && (
         <PhaseB profileData={baseProfile} rec={rec}
+          seedTranscript={(phaseB && !phaseB.career && phaseB.transcript) || []}
           onAutosave={(tr) => apiSaveSession(studyId.current, { phaseB: { transcript: tr } })}
           onDone={(pb) => { setPhaseB(pb); apiSaveSession(studyId.current, { phaseB: pb }); setScreen('pause_bc'); }}
           onBack={() => setScreen('presurvey')} />
@@ -482,6 +493,11 @@ function App() {
           onRestart={restart} />
       )}
 
+      {preview && (
+        <div className="preview-badge" title="Researcher test drive — no session row, no autosaves, all gates skippable">
+          PREVIEW · nothing is saved · gates off
+        </div>
+      )}
       {/* The design Tweaks panel is a researcher/dev tool — hidden from real
           participants to keep the flow seamless (Build Plan §16); show with ?test=1. */}
       {testMode && <ThesisTweaks tweaks={tweaks} setTweak={setTweak} />}
