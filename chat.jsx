@@ -27,10 +27,24 @@ const ASK_POOL = [
   'How do I know if this career is right for me?',
 ];
 
+/* True when an idea substantially overlaps something the user already asked —
+ * suggesting "What does an ordinary Tuesday look like?" right after they typed
+ * "what does a normal tuesday look like" reads as the app not listening. */
+function askedAlready(idea, userTexts) {
+  const words = (s) => new Set(s.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter((w) => w.length >= 4));
+  const iw = [...words(idea)];
+  return userTexts.some((t) => {
+    const tw = words(t);
+    return iw.filter((w) => tw.has(w)).length >= 3;
+  });
+}
+
 /* Pick `n` not-yet-used questions; recycle the pool once it runs dry. */
-function pickAskIdeas(used, n = 3) {
+function pickAskIdeas(used, n = 3, userTexts = []) {
   let avail = ASK_POOL.map((_, i) => i).filter((i) => !used.has(i));
   if (avail.length < n) { used.clear(); avail = ASK_POOL.map((_, i) => i); }
+  const fresh = avail.filter((i) => !askedAlready(ASK_POOL[i], userTexts));
+  if (fresh.length >= n) avail = fresh;
   const picks = [];
   while (picks.length < n && avail.length) {
     picks.push(avail.splice(Math.floor(Math.random() * avail.length), 1)[0]);
@@ -139,6 +153,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
   const [draft, setDraft] = useState('');
   const [askIdeas, setAskIdeas] = useState([]);   // refreshed after every reply
   const usedIdeas = useRef(new Set());
+  const userTexts = useRef([]);                   // what they asked, for chip de-duplication
   const [error, setError] = useState(null);
   const [elapsedMin, setElapsedMin] = useState(0);
   const [nextRest, setNextRest] = useState(SOFT_MIN); // recurring rest prompt cadence (§11.4)
@@ -227,7 +242,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
     try {
       const { reply } = await postJSON('/api/chat', { sessionId: sessionId.current, message: t });
       setMessages(prev => [...prev, { role: 'future', paras: splitParas(reply), id: `f${Date.now()}`, ts: new Date().toISOString() }]);
-      setAskIdeas(pickAskIdeas(usedIdeas.current)); // fresh angles after every reply
+      setAskIdeas(pickAskIdeas(usedIdeas.current, 3, userTexts.current)); // fresh angles after every reply
       setLastFailed(null);
     } catch (e) {
       setLastFailed(t);
@@ -243,6 +258,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
     if (!sessionId.current) { setError('No active session — reload to reconnect.'); return; }
     setMessages(prev => [...prev, { role: 'user', text: t, id: `u${Date.now()}`, ts: new Date().toISOString() }]);
     setDraft('');
+    userTexts.current.push(t);
     setAskIdeas([]); // hide while the reply is in flight; refreshed on arrival
     await requestReply(t);
   };
@@ -303,6 +319,7 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
             </div>
           </div>
           <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+            <button className="header-restart" onClick={onExit} title="Start over from the beginning" aria-label="Start over">↻</button>
             <span className="clock" title="Time in this conversation">{mmss(elapsedMin)}</span>
             <span className="chip"><span className="pulse"></span>A role-play · you decide</span>
             <button className="btn accent sm" onClick={finish} title="Move on to the reflection">
@@ -415,8 +432,9 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [pending, setPending] = useState(false);
-  const [askIdeas, setAskIdeas] = useState(() => pickAskIdeas(new Set()));
   const usedIdeas = useRef(new Set());
+  const userTexts = useRef((history || []).filter((m) => m.role === 'user').map((m) => m.text || ''));
+  const [askIdeas, setAskIdeas] = useState(() => pickAskIdeas(usedIdeas.current, 3, userTexts.current));
   const [error, setError] = useState(null);
   const startedAt = useRef(Date.now());
   const scrollRef = useRef(null);
@@ -458,13 +476,14 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
     if (!sessionId) { setError('This chat has ended — your study session is already saved.'); return; }
     setMessages((p) => [...p, { role: 'user', text: t, id: `u${Date.now()}`, ts: new Date().toISOString() }]);
     setDraft(''); setPending(true); setError(null); setAskIdeas([]);
+    userTexts.current.push(t);
     try {
       const { reply } = await postJSON('/api/chat', { sessionId, message: t });
       setMessages((p) => [...p, { role: 'future', paras: splitParas(reply), id: `f${Date.now()}`, ts: new Date().toISOString() }]);
-      setAskIdeas(pickAskIdeas(usedIdeas.current));
+      setAskIdeas(pickAskIdeas(usedIdeas.current, 3, userTexts.current));
     } catch (e) {
       setError(e.message || 'Something went wrong. Please try again.');
-      setAskIdeas(pickAskIdeas(usedIdeas.current));
+      setAskIdeas(pickAskIdeas(usedIdeas.current, 3, userTexts.current));
     } finally { setPending(false); }
   };
 
@@ -480,7 +499,7 @@ function FreeContinuation({ profile = {}, career = 'this career', sessionId, his
         <div className="pb-wrap">
           <div className="sv-wrap" style={{ textAlign: 'center', paddingBottom: 8 }}>
             <div className="eyebrow" style={{ justifyContent: 'center' }}><span className="dot" />Just for you</div>
-            <p className="sv-hint" style={{ maxWidth: '52ch', margin: '0 auto' }}>
+            <p className="sv-intro" style={{ maxWidth: '52ch', margin: '6px auto 0' }}>
               The study questions are done. If you like, keep talking with your future self — this part is
               still recorded for the researcher, but it's outside the main study and entirely optional.
             </p>

@@ -37,10 +37,13 @@ const UVA_API_TOKEN = process.env.UVA_API_TOKEN || '';
 const USE_PROXY = Boolean(LLM_BASE_URL && UVA_API_TOKEN);
 const MODEL = process.env.MODEL_ID || (USE_PROXY ? 'gpt-5.1' : 'claude-sonnet-4-6');
 const TEMPERATURE = Number(process.env.LLM_TEMPERATURE ?? 0.9);
-// Reply token cap. Must be generous: on reasoning models (gpt-5.1 via the UvA
-// proxy) hidden reasoning tokens count against this cap too, so a tight cap
-// truncates the VISIBLE reply mid-sentence ("the message suddenly cuts off").
-const MAX_TOKENS = Number(process.env.LLM_MAX_TOKENS ?? 4096);
+// Reply token cap — a SAFETY CEILING, not a quality knob: it does nothing
+// unless hit. It must be generous because on reasoning models (gpt-5.1 via the
+// UvA proxy) hidden reasoning tokens count against it too — a tight cap both
+// truncates the visible reply mid-sentence AND starves the model of thinking
+// room. 16384 ≈ unlimited for this app's short replies; visible length is
+// governed by the prompts, and the 90s LLM_TIMEOUT_MS bounds runaway calls.
+const MAX_TOKENS = Number(process.env.LLM_MAX_TOKENS ?? 16384);
 const REQUEST_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS ?? 90000);
 const PHASE_B_NUDGE =
   '(Begin the recommendation conversation now — greet me warmly and ask your first question.)';

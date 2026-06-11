@@ -213,13 +213,11 @@ function CirclesField({ id, text, hint, value, onChange }) {
           );
         })}
       </div>
-      <div className="sv-scale-row" style={{ marginTop: 2 }}>
-        <span className="sv-scale-end">Completely separate</span>
-        <span className="sv-scale-end" style={{ marginLeft: 'auto' }}>Almost completely overlapping</span>
+      <div className="sv-ios-ends">
+        <span>Completely separate</span>
+        <span>Almost completely overlapping</span>
       </div>
-      <div className="sv-scale-row">
-        <span className="sv-scale-end">Left circle = you now · right circle = you in 10 years</span>
-      </div>
+      <div className="sv-ios-legend">Left circle = you now · right circle = you in 10 years</div>
     </div>
   );
 }
