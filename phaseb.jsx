@@ -131,7 +131,10 @@ function PhaseB({ profileData, rec = 'reflective', seedTranscript = [], onDone, 
 
   const lockIn = async () => {
     if (!canLock) return;
-    const chosen = career.trim();
+    // Preview test drives may skip the picker entirely — substitute a clearly
+    // labelled placeholder so the role-play never reads "this career". The real
+    // flow can't get here without a validated career (gates + model check).
+    const chosen = career.trim() || (isPreview ? 'Data analyst (preview)' : '');
     setCareerNote(null);
     // Free-typed careers get a model sanity check before the role-play can start
     // (card titles came from the model already). Fail-open: an unreachable check
