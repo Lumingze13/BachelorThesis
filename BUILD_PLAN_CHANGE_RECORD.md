@@ -314,6 +314,28 @@ explicit instruction from Kangzhi that supersedes the v5.1 as-built text.
   for BOTH; only the stage-C bot's inputs differ. Code matches the docs; no
   change made.
 
+## Round 8 (2026-06-12) — card-extraction hardening, concrete salaries, preview placeholder
+
+- **Stage-B recommendation extraction rewritten as `lib/recs.js`** [DEPLOYED]:
+  the old parser required a perfectly fenced ```json block with strictly valid
+  JSON; any model drift (missing closing fence, bare JSON, smart quotes,
+  uppercase tag) leaked the RAW JSON into the participant-visible bubble — seen
+  live with reflective on gpt-5.1. The extractor now also brace-matches the
+  object containing "recommendations", retries with smart-quote normalisation,
+  and strips stray fence markers from the visible text. `test/recs_test.mjs`
+  covers the drift cases (added to `npm test`). Live re-probe: "give me
+  recommendation directly" → 5 cards, no leak.
+- **§8 MONEY rule (both arms — realism floor)** [USER-ORDERED] [DEPLOYED]: when
+  pay comes up, give concrete location-based salary ranges in today's terms and
+  local currency at the relevant career stages, with what moves the number —
+  never "it varies". Live-verified (main, Amsterdam, consultant): "in today's
+  terms (2026 euros) … 45–60k base as a fresh grad … year 3–5 70–90k…".
+- **Preview placeholder career** [DEPLOYED]: a preview test drive that skips the
+  career picker now role-plays "Data analyst (preview)" instead of the
+  fallback string "this career". The REAL flow cannot reach an empty career —
+  the lock-in gate requires a non-empty entry and the model validity check must
+  pass — so the placeholder is preview-only by construction.
+
 ## Verification log (2026-06-11)
 
 - `npm test` (flow / reconstruct / admin-gate / db) green after every batch; admin

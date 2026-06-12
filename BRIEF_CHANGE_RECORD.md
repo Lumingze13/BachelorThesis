@@ -109,6 +109,23 @@ is announced on the landing "How it works" modal and the pre-post-survey pause.
 Rationale: participant value (free exploration as a thank-you) without touching
 the measured flow — all instruments are completed before the hub is reachable.
 
+### 1.8 Concrete money answers (both arms, 2026-06-12)
+
+When pay comes up in the stage-C role-play, both arms now answer with concrete,
+location-based salary ranges expressed in today's terms and local currency at the
+relevant career stages (entry / mid / the future self's level), instead of vague
+"it varies" hedging. Realism-floor logic again: honest specificity applied
+symmetrically, neither inflating nor dramatising. Live-verified.
+
+### 1.9 Stage-B card rendering hardened (2026-06-12)
+
+The five recommendation cards are parsed from the model's structured block; the
+parser previously demanded an exactly-formatted block, and any drift dumped raw
+JSON into the participant-visible chat (observed once with the reflective prompt
+on gpt-5.1). The extractor is now drift-tolerant (unclosed/missing fences, smart
+quotes, surrounding prose) with regression tests, so the card UI — part of the
+shared stage-B stimulus — renders reliably in all three rec variants.
+
 ## 2. Participant experience & fatigue management
 
 - **Landing page** is minimal-first: hero only; "How it works" (steps with
