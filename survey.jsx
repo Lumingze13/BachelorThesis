@@ -213,13 +213,11 @@ function CirclesField({ id, text, hint, value, onChange }) {
           );
         })}
       </div>
-      <div className="sv-scale-row" style={{ marginTop: 2 }}>
-        <span className="sv-scale-end">Completely separate</span>
-        <span className="sv-scale-end" style={{ marginLeft: 'auto' }}>Almost completely overlapping</span>
+      <div className="sv-ios-ends">
+        <span>Completely separate</span>
+        <span>Almost completely overlapping</span>
       </div>
-      <div className="sv-scale-row">
-        <span className="sv-scale-end">Left circle = you now · right circle = you in 10 years</span>
-      </div>
+      <div className="sv-ios-legend">Left circle = you now · right circle = you in 10 years</div>
     </div>
   );
 }
@@ -228,7 +226,7 @@ function CirclesField({ id, text, hint, value, onChange }) {
 function IOSField({ id, value, onChange, career }) {
   return (
     <CirclesField id={id} value={value} onChange={onChange}
-      text={`Pick the pair of circles that best shows how close and overlapping you feel with your future self${career ? ` as a ${career}` : ''}.`}
+      text={`Pick the pair of circles that best shows how CLOSE AND OVERLAPPING you feel with your future self${career ? ` as a ${career}` : ''}.`}
       hint="Close and overlapping = how much that future person feels part of who you are." />
   );
 }
@@ -319,14 +317,32 @@ function buildPreSections(answers, onChange) {
         </div>
       ),
     },
+    // Short pages (2026-06-11: ~5 items per page max — a dense page reads as
+    // intimidating). Instruments are unchanged; only the pagination differs:
+    // TIPI is split 5+5 (the verbatim original instruction repeats on both
+    // pages), the future-self block splits circles / vividness, and the two
+    // distal-outcome scales get a page each.
     {
       title: 'How you see yourself',
+      eyebrow: 'Part 1 of 2',
       intro: TIPI_INSTRUCTION,
-      ids: TIPI.map((i) => i.id),
+      ids: TIPI.slice(0, 5).map((i) => i.id),
       node: (
         <div className="sv-section">
           <p className="sv-stem">I see myself as:</p>
-          <LikertGrid items={TIPI} scale={TIPI_SCALE} answers={answers} onChange={set} />
+          <LikertGrid items={TIPI.slice(0, 5)} scale={TIPI_SCALE} answers={answers} onChange={set} />
+        </div>
+      ),
+    },
+    {
+      title: 'How you see yourself',
+      eyebrow: 'Part 2 of 2',
+      intro: TIPI_INSTRUCTION,
+      ids: TIPI.slice(5).map((i) => i.id),
+      node: (
+        <div className="sv-section">
+          <p className="sv-stem">I see myself as:</p>
+          <LikertGrid items={TIPI.slice(5)} scale={TIPI_SCALE} answers={answers} onChange={set} />
         </div>
       ),
     },
@@ -345,7 +361,7 @@ function buildPreSections(answers, onChange) {
     {
       title: 'Your future self, today',
       intro: "The next questions are about your future self — the person you will be about 10 years from now. These questions capture how you picture that person today; you'll answer the same ones again after the conversation, so we can see what shifts.",
-      ids: ['ios_pre', ...FSCS.map((i) => i.id), ...VIVIDNESS.map((i) => i.id)],
+      ids: ['ios_pre', ...FSCS.map((i) => i.id)],
       node: (
         <div className="sv-section">
           <IOSField id="ios_pre" value={answers.ios_pre} onChange={set} />
@@ -353,22 +369,33 @@ function buildPreSections(answers, onChange) {
             <CirclesField key={it.id} id={it.id} text={it.text} hint={it.hint}
               value={answers[it.id]} onChange={set} />
           ))}
-          <LikertGrid items={VIVIDNESS} scale={AGREE7} answers={answers} onChange={set} />
+        </div>
+      ),
+    },
+    {
+      title: 'Picturing that future',
+      intro: 'How much do you agree with each statement?',
+      ids: VIVIDNESS.map((i) => i.id),
+      node: <LikertGrid items={VIVIDNESS} scale={AGREE7} answers={answers} onChange={set} />,
+    },
+    {
+      title: 'Your career decision',
+      eyebrow: 'Part 1 of 2',
+      intro: "Where you stand with career decisions right now — you'll answer these again after the conversation.",
+      ids: CDSE_SA_ITEMS.map((i) => i.id),
+      node: (
+        <div className="sv-section">
+          <p className="sv-stem">{CDSE_STEM}</p>
+          <LikertGrid items={CDSE_SA_ITEMS} scale={CDSE_SCALE} answers={answers} onChange={set} />
         </div>
       ),
     },
     {
       title: 'Your career decision',
-      intro: "Two short sets of questions about where you stand with career decisions right now — you'll answer these again after the conversation.",
-      ids: [...CDSE_SA_ITEMS.map((i) => i.id), ...CIP_CCA_ITEMS.map((i) => i.id)],
-      node: (
-        <div className="sv-section">
-          <p className="sv-stem">{CDSE_STEM}</p>
-          <LikertGrid items={CDSE_SA_ITEMS} scale={CDSE_SCALE} answers={answers} onChange={set} />
-          <p className="sv-stem" style={{ marginTop: 18 }}>How much do you agree with each statement?</p>
-          <LikertGrid items={CIP_CCA_ITEMS} scale={CIP_SCALE} answers={answers} onChange={set} />
-        </div>
-      ),
+      eyebrow: 'Part 2 of 2',
+      intro: 'How much do you agree with each statement?',
+      ids: CIP_CCA_ITEMS.map((i) => i.id),
+      node: <LikertGrid items={CIP_CCA_ITEMS} scale={CIP_SCALE} answers={answers} onChange={set} />,
     },
   ];
 }
@@ -382,7 +409,7 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
     {
       title: 'Your future self, now',
       intro: 'Now — after the conversation — how do you picture your future self (about 10 years from now)?',
-      ids: ['ios_post', ...fscsPost.map((i) => i.id), ...vivPost.map((i) => i.id)],
+      ids: ['ios_post', ...fscsPost.map((i) => i.id)],
       node: (
         <div className="sv-section">
           <IOSField id="ios_post" value={answers.ios_post} onChange={set} career={career} />
@@ -390,24 +417,35 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
             <CirclesField key={it.id} id={it.id} text={it.text} hint={it.hint}
               value={answers[it.id]} onChange={set} />
           ))}
-          <LikertGrid items={vivPost} scale={AGREE7} answers={answers} onChange={set} />
         </div>
       ),
     },
     {
+      title: 'Picturing that future, now',
+      intro: 'How much do you agree with each statement?',
+      ids: vivPost.map((i) => i.id),
+      node: <LikertGrid items={vivPost} scale={AGREE7} answers={answers} onChange={set} />,
+    },
+    {
       title: 'Your career decision, now',
-      intro: 'The same two short sets as before — answer for how you feel right now.',
-      ids: [...CDSE_SA_ITEMS, ...CIP_CCA_ITEMS].map((i) => i.id + '_post'),
+      eyebrow: 'Part 1 of 2',
+      intro: 'The same short sets as before — answer for how you feel right now.',
+      ids: CDSE_SA_ITEMS.map((i) => i.id + '_post'),
       node: (
         <div className="sv-section">
           <p className="sv-stem">{CDSE_STEM}</p>
           <LikertGrid items={CDSE_SA_ITEMS.map((i) => ({ ...i, id: i.id + '_post' }))}
             scale={CDSE_SCALE} answers={answers} onChange={set} />
-          <p className="sv-stem" style={{ marginTop: 18 }}>How much do you agree with each statement?</p>
-          <LikertGrid items={CIP_CCA_ITEMS.map((i) => ({ ...i, id: i.id + '_post' }))}
-            scale={CIP_SCALE} answers={answers} onChange={set} />
         </div>
       ),
+    },
+    {
+      title: 'Your career decision, now',
+      eyebrow: 'Part 2 of 2',
+      intro: 'How much do you agree with each statement?',
+      ids: CIP_CCA_ITEMS.map((i) => i.id + '_post'),
+      node: <LikertGrid items={CIP_CCA_ITEMS.map((i) => ({ ...i, id: i.id + '_post' }))}
+        scale={CIP_SCALE} answers={answers} onChange={set} />,
     },
     {
       title: 'About the conversation',
@@ -472,14 +510,37 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
 
 // --- Paged survey container ------------------------------------------------
 
-function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow }) {
+const SVPAGE_KEY = 'thesis_svpage_v1';
+const readSvPage = (k) => {
+  try { return Number(JSON.parse(localStorage.getItem(SVPAGE_KEY) || '{}')[k]) || 0; } catch (e) { return 0; }
+};
+const writeSvPage = (k, n) => {
+  try {
+    const o = JSON.parse(localStorage.getItem(SVPAGE_KEY) || '{}');
+    if (n == null) delete o[k]; else o[k] = n;
+    localStorage.setItem(SVPAGE_KEY, JSON.stringify(o));
+  } catch (e) { /* storage unavailable */ }
+};
+
+function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow, storageKey }) {
   const { useState } = React;
-  const [page, setPage] = useState(0);
-  const s = sections[page];
-  const complete = sectionComplete(s.ids, answers);
+  const isPreview = typeof window !== 'undefined' && window.THESIS_PREVIEW;
+  // Remember the page index across refreshes (§13a) — answers were already
+  // restored, but landing back on page 1 of 9 read as "starting over".
+  const [page, setPageRaw] = useState(() => {
+    const n = storageKey && !isPreview ? readSvPage(storageKey) : 0;
+    return Math.min(Math.max(0, n), sections.length - 1);
+  });
+  const setPage = (n) => { setPageRaw(n); if (storageKey && !isPreview) writeSvPage(storageKey, n); };
+  const s = sections[Math.min(page, sections.length - 1)];
+  // Preview mode (researcher test drive): every page may be skipped unfilled.
+  const complete = isPreview || sectionComplete(s.ids, answers);
   const isLast = page === sections.length - 1;
 
-  const next = () => { if (isLast) onDone(); else { setPage(page + 1); window.scrollTo(0, 0); } };
+  const next = () => {
+    if (isLast) { if (storageKey) writeSvPage(storageKey, null); onDone(); }
+    else { setPage(page + 1); window.scrollTo(0, 0); }
+  };
   const back = () => { if (page === 0) onBack && onBack(); else { setPage(page - 1); window.scrollTo(0, 0); } };
 
   return (
@@ -492,8 +553,13 @@ function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow }) {
       </nav>
       <div className="flow-body">
         <div className="sv-wrap">
-          <div className="eyebrow"><span className="dot" />{s.title}</div>
-          {s.intro && <p className="sv-intro">{s.intro}</p>}
+          {/* Centered, oversized page heading + instruction — unmistakably
+              distinct from the items below (2026-06-11 readability order). */}
+          <div className="sv-head">
+            {s.eyebrow && <div className="sv-part">{s.eyebrow}</div>}
+            <h2 className="sv-title">{s.title}</h2>
+            {s.intro && <p className="sv-instruction">{s.intro}</p>}
+          </div>
           {s.node}
         </div>
       </div>
@@ -518,7 +584,7 @@ function PagedSurvey({ sections, answers, onChange, onDone, onBack, eyebrow }) {
 
 function PreSurvey({ answers, onChange, onDone, onBack }) {
   return (
-    <PagedSurvey eyebrow="Step 02 · Pre-survey"
+    <PagedSurvey eyebrow="Step 02 · Pre-survey" storageKey="pre"
       sections={buildPreSections(answers, onChange)}
       answers={answers} onChange={onChange} onDone={onDone} onBack={onBack} />
   );
@@ -526,7 +592,7 @@ function PreSurvey({ answers, onChange, onDone, onBack }) {
 
 function PostSurvey({ answers, onChange, onDone, career, study }) {
   return (
-    <PagedSurvey eyebrow="Final step · Reflection"
+    <PagedSurvey eyebrow="Final step · Reflection" storageKey="post"
       sections={buildPostSections(answers, onChange, career, study)}
       answers={answers} onChange={onChange} onDone={onDone} />
   );

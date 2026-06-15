@@ -23,13 +23,19 @@ function qp(name) {
 }
 // Two orthogonal axes from the URL (Build Plan §6), locked for the session:
 //   condition / cond ∈ {main, baseline}   → stage-C role-play prompt
-//   rec ∈ {guide, reflective, direct}     → stage-B recommendation prompt
+//   rec ∈ {reflective, direct, guide}     → stage-B recommendation prompt
+//     (default = reflective, the working stage-B design; guide is the backup)
 //   study (analysis tag) + pid (prefixed id, e.g. K017) are recorded only.
 function readCondition() { const c = qp('condition') || qp('cond'); return c === 'baseline' ? 'baseline' : 'main'; }
-function readRec() { const r = qp('rec'); return ['guide', 'reflective', 'direct'].includes(r) ? r : 'guide'; }
+function readRec() { const r = qp('rec'); return ['guide', 'reflective', 'direct'].includes(r) ? r : 'reflective'; }
 function readStudy() { return qp('study') || 'kangzhi'; }
 function readPid() { return qp('pid') || null; }
 function readTestMode() { return qp('test') === '1'; }
+// Preview (?preview=1, minted from the admin Recruit tab): a researcher test
+// drive — NOTHING is saved (no session row, no autosaves, no local snapshot)
+// and every gate/validation can be skipped, so the whole flow can be clicked
+// through without filling anything in. Never sent to participants.
+function readPreview() { return qp('preview') === '1'; }
 
 // --- Persistence (additive; never blocks or alters the participant UX) ------
 // The study session is saved to Postgres via the backend. All calls are
@@ -73,6 +79,19 @@ function phaseBNotesFrom(pb) {
   ].filter(Boolean).join('\n');
 }
 
+/** Where an admin-resumed run should land, given its saved study object. */
+function resumeScreenFor(study) {
+  const has = (o) => o && Object.keys(o).length > 0;
+  if (!study) return 'landing';
+  if (study.meta && study.meta.status === 'completed') return 'done';
+  if (!(study.profile && study.profile.name)) return 'avatar';
+  if (!has(study.preSurvey)) return 'presurvey';
+  if (!(study.phaseB && study.phaseB.career)) return 'pause_ab';
+  if (has(study.postSurvey)) return 'postsurvey';
+  const cTurns = study.phaseC && Array.isArray(study.phaseC.transcript) && study.phaseC.transcript.length;
+  return cTurns ? 'roleplay' : 'pause_bc';
+}
+
 function App() {
   const [tweaks, setTweak] = useTweaks(DEFAULT_TWEAKS);
   const [condition] = useState(readCondition);
@@ -80,6 +99,8 @@ function App() {
   const [study] = useState(readStudy);
   const [pid] = useState(readPid);
   const [testMode] = useState(readTestMode);
+  const [preview] = useState(readPreview);
+  if (typeof window !== 'undefined') window.THESIS_PREVIEW = preview; // read by gates in screens/survey/phaseb
   const [screen, setScreen] = useState(() => (readTestMode() ? 'launcher' : 'landing'));
   const [profile, setProfile] = useState({ name: '', color: '#b5552f' });
   const [preAnswers, setPreAnswers] = useState({});
@@ -89,6 +110,20 @@ function App() {
   const [freeCont, setFreeCont] = useState(null); // free continuation (logged separately)
   const [pendingSnap, setPendingSnap] = useState(null); // saved snapshot awaiting resume-or-restart
   const phaseCSessionId = useRef(null);           // reused so free continuation = same convo
+  const resumedC = useRef(false);                 // admin resume: seed the role-play with the saved transcript
+  // Post-study exploration (outside the analysis): repeated career picks +
+  // role-plays after the post-survey. Stored under freeContinuation.explorations.
+  const [exploreB, setExploreB] = useState(null); // current exploration career pick
+  const explorations = useRef([]);                // completed exploration runs
+
+  // Everything after the post-survey lives in the free_continuation section;
+  // one writer keeps free chat + explorations from clobbering each other.
+  const saveFreeSection = (fc, draft) => apiSaveSession(studyId.current, {
+    freeContinuation: {
+      ...(fc || freeCont || {}),
+      explorations: draft ? [...explorations.current, draft] : explorations.current,
+    },
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = tweaks.theme;
@@ -112,6 +147,28 @@ function App() {
     let snap = null;
     try { snap = JSON.parse(localStorage.getItem(PROGRESS_KEY) || 'null'); } catch (e) {}
     const existing = readSessionParam();
+    // Admin-initiated resume (?session=<id>&resume=1): hydrate the run from the
+    // SERVER row — works on any device, unlike the localStorage snapshot. The
+    // role-play transcript (if any) is re-seeded into the model so the future
+    // self remembers the earlier conversation.
+    if (readPreview()) return; // preview: always start clean, adopt nothing
+    if (existing && qp('resume') === '1' && !readTestMode()) {
+      studyId.current = existing;
+      (async () => {
+        try {
+          const r = await fetch(PERSIST_BASE + '/api/sessions/' + existing);
+          if (!r.ok) throw new Error('not found');
+          const study = await r.json();
+          if (study.profile && study.profile.name) setProfile((p) => ({ ...p, ...study.profile }));
+          if (study.preSurvey) setPreAnswers(study.preSurvey);
+          if (study.phaseB && (study.phaseB.career || (study.phaseB.transcript || []).length)) setPhaseB(study.phaseB);
+          if (study.phaseC && (study.phaseC.transcript || []).length) { setPhaseC(study.phaseC); resumedC.current = true; }
+          if (study.postSurvey && Object.keys(study.postSurvey).length) setPostAnswers(study.postSurvey);
+          setScreen(resumeScreenFor(study));
+        } catch (e) { setScreen('landing'); }
+      })();
+      return;
+    }
     if (!readTestMode() && snap && snap.screen && snap.screen !== 'landing' && snap.screen !== 'done') {
       // Offer an explicit resume-or-restart choice (Build Plan §13a) rather than
       // silently restoring — the participant decides to continue or start fresh.
@@ -127,8 +184,9 @@ function App() {
 
   // First write happens only after the participant agrees (§15: no data before
   // consent). Admin-created links already carry an id; never create twice.
+  // Preview runs never create a row at all.
   const beginAfterConsent = () => {
-    if (!studyId.current) {
+    if (!studyId.current && !preview) {
       apiCreateSession({ condition, rec, study, pid }).then((id) => { studyId.current = id; });
     }
     setScreen('avatar');
@@ -140,6 +198,7 @@ function App() {
     // onward). Landing/consent/avatar/launcher/resume aren't an "in-progress run"
     // to resume into (§13a), and we don't want a consent-screen refresh to pop the
     // resume-or-restart choice.
+    if (preview) return; // test drives leave no trace
     if (['landing', 'consent', 'avatar', 'resume_choice', 'launcher'].includes(screen)) return;
     try {
       if (screen === 'done') { localStorage.removeItem(PROGRESS_KEY); return; }
@@ -159,21 +218,51 @@ function App() {
     : baseProfile;
 
   const restart = () => {
-    try { localStorage.removeItem(PROGRESS_KEY); } catch (e) {}
+    try { localStorage.removeItem(PROGRESS_KEY); localStorage.removeItem('thesis_svpage_v1'); } catch (e) {}
     studyId.current = null; // a fresh session row is created at the next consent (§15)
     setProfile({ name: '', color: tweaks.accent });
     setPreAnswers({}); setPhaseB(null); setPhaseC(null); setPostAnswers({});
     setFreeCont(null); phaseCSessionId.current = null;
+    setExploreB(null); explorations.current = [];
     setScreen('landing');
   };
 
-  // Resume-or-restart (Build Plan §13a): restore the saved snapshot, or start fresh.
-  const resumeRun = () => {
+  // One confirm-guarded restart shared by the floating fab AND the chat sidebar's
+  // "Start over" — a single misclick must never wipe a session in progress.
+  const confirmRestart = () => {
+    const ok = typeof window.confirm === 'function'
+      ? window.confirm('Restart from the beginning? Your current attempt will be left behind (it stays saved for the researcher) and a fresh one starts.')
+      : true;
+    if (ok) restart();
+  };
+
+  // Resume-or-restart (Build Plan §13a): restore the saved snapshot, or start
+  // fresh. The snapshot is merged with the SERVER row when one exists — the
+  // per-turn autosaves there hold the mid-chat transcript and the conversation
+  // clock, which the local snapshot doesn't (it only captures completed phases).
+  // That's what lets a refresh/redeploy mid-role-play resume the SAME
+  // conversation at the SAME clock instead of starting over.
+  const resumeRun = async () => {
     const s = pendingSnap || {};
     if (s.profile) setProfile(s.profile);
     if (s.preAnswers) setPreAnswers(s.preAnswers);
-    if (s.phaseB) setPhaseB(s.phaseB);
-    if (s.phaseC) setPhaseC(s.phaseC);
+    let pb = s.phaseB || null;
+    let pc = s.phaseC || null;
+    if (studyId.current) {
+      try {
+        const r = await fetch(PERSIST_BASE + '/api/sessions/' + studyId.current);
+        if (r.ok) {
+          const study = await r.json();
+          if (!pb && study.phaseB && (study.phaseB.career || (study.phaseB.transcript || []).length)) pb = study.phaseB;
+          const serverC = study.phaseC || {};
+          const serverTurns = (serverC.transcript || []).length;
+          const localTurns = ((pc && pc.transcript) || []).length;
+          if (serverTurns > localTurns) pc = serverC;
+        }
+      } catch (e) { /* offline — snapshot only */ }
+    }
+    if (pb) setPhaseB(pb);
+    if (pc && (pc.transcript || []).length) { setPhaseC(pc); resumedC.current = true; }
     if (s.postAnswers) setPostAnswers(s.postAnswers);
     setPendingSnap(null);
     setScreen(s.screen || 'landing');
@@ -229,7 +318,7 @@ function App() {
               Back
             </button>
             <span className="step-label">STEP 01</span>
-            <button className="btn accent" disabled={!profile.name.trim()} onClick={() => setScreen('presurvey')}>
+            <button className="btn accent" disabled={!profile.name.trim() && !preview} onClick={() => setScreen('presurvey')}>
               Continue
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
@@ -266,6 +355,7 @@ function App() {
 
       {screen === 'phaseb' && (
         <PhaseB profileData={baseProfile} rec={rec}
+          seedTranscript={(phaseB && !phaseB.career && phaseB.transcript) || []}
           onAutosave={(tr) => apiSaveSession(studyId.current, { phaseB: { transcript: tr } })}
           onDone={(pb) => { setPhaseB(pb); apiSaveSession(studyId.current, { phaseB: pb }); setScreen('pause_bc'); }}
           onBack={() => setScreen('presurvey')} />
@@ -283,19 +373,21 @@ function App() {
       {screen === 'roleplay' && (
         <Chat profile={profile} condition={condition} profileData={fullProfile}
           phaseBNotes={phaseBNotesFrom(phaseB)} location={phaseB && phaseB.location} career={phaseB && phaseB.career}
-          onAutosave={(tr) => apiSaveSession(studyId.current, { phaseC: { transcript: tr } })}
+          seedTranscript={(resumedC.current && phaseC && phaseC.transcript) || []}
+          seedElapsedSec={(resumedC.current && phaseC && phaseC.durationSec) || 0}
+          onAutosave={(tr, extra) => apiSaveSession(studyId.current, { phaseC: { transcript: tr, ...(extra || {}) } })}
           onComplete={(pc, sid) => {
             setPhaseC(pc); phaseCSessionId.current = sid;
             apiSaveSession(studyId.current, { phaseC: pc });
             setScreen('pause_cpost');
           }}
-          onExit={restart} />
+          onExit={confirmRestart} />
       )}
 
       {screen === 'pause_cpost' && (
         <Pause title="Thank you."
           lines={[
-            "A few short questions about how that felt, then you're done.",
+            "A few short questions about how that felt — then the session opens up: you can keep chatting, or step into other careers, for as long as you like.",
             "Take a breath, and continue when you're ready.",
           ]}
           onContinue={() => setScreen('postsurvey')} />
@@ -313,14 +405,73 @@ function App() {
               },
               version: '3.1', finalize: true,
             });
-            setScreen('free');
+            setScreen('explore_hub');
           }} />
+      )}
+
+      {/* Post-study hub (everything from here is recorded but OUTSIDE the main
+          analysis): keep talking, step into other careers — repeatable — or end. */}
+      {screen === 'explore_hub' && (
+        <div className="flow">
+          <nav className="topnav"><div className="brand"><BrandMark size={22} /><span>Thesis</span></div><div className="end" /></nav>
+          <div className="flow-body">
+            <div className="sv-wrap" style={{ textAlign: 'center' }}>
+              <div className="eyebrow" style={{ justifyContent: 'center' }}><span className="dot" />Study questions done — this part is just for you</div>
+              <h2 className="consent-title">Keep exploring, if you like</h2>
+              <p className="sv-intro" style={{ maxWidth: '52ch', margin: '0 auto 24px' }}>
+                Your study session is complete and saved. From here on, nothing counts toward the research
+                analysis — it's still recorded, but it's your playground: keep the conversation going, or step
+                into entirely different careers, as many as you like.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+                <button className="btn accent" onClick={() => setScreen('free')}>
+                  Keep talking with {profile.name || 'your future self'} →
+                </button>
+                <button className="btn ghost" onClick={() => { setExploreB(null); setScreen('explore_b'); }}>
+                  Step into a different career →
+                </button>
+                <button className="btn ghost" onClick={() => setScreen('done')}>I'm done — finish up</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {screen === 'explore_b' && (
+        <PhaseB profileData={baseProfile} rec={rec}
+          onAutosave={() => {}}
+          onDone={(pb) => { setExploreB(pb); setScreen('explore_c'); }}
+          onBack={() => setScreen('explore_hub')} />
+      )}
+
+      {screen === 'explore_c' && (
+        <Chat profile={profile} mode="exploration" condition="main"
+          profileData={{ ...baseProfile, career: exploreB && exploreB.career, familiarity: exploreB && exploreB.familiarity, interestStrength: exploreB && exploreB.interestStrength }}
+          phaseBNotes={phaseBNotesFrom(exploreB)} location={exploreB && exploreB.location} career={exploreB && exploreB.career}
+          onSwitchCareer={() => setScreen('explore_b')}
+          onAutosave={(tr) => saveFreeSection(null, { career: exploreB && exploreB.career, transcript: tr, inProgress: true })}
+          onComplete={(pc) => {
+            explorations.current = [...explorations.current, {
+              career: (exploreB && exploreB.career) || null,
+              location: (exploreB && exploreB.location) || null,
+              phaseBTranscript: (exploreB && exploreB.transcript) || [],
+              transcript: pc.transcript, durationSec: pc.durationSec, turnCount: pc.turnCount,
+              ts: new Date().toISOString(),
+            }];
+            saveFreeSection(null, null);
+            setScreen('explore_hub');
+          }}
+          onExit={confirmRestart} />
       )}
 
       {screen === 'free' && (
         <FreeContinuation profile={profile} career={phaseB && phaseB.career} sessionId={phaseCSessionId.current}
-          onAutosave={(tr) => apiSaveSession(studyId.current, { freeContinuation: { transcript: tr } })}
-          onDone={(fc) => { setFreeCont(fc); apiSaveSession(studyId.current, { freeContinuation: fc }); setScreen('done'); }} />
+          history={(phaseC && phaseC.transcript) || []}
+          condition={condition} profileData={fullProfile} phaseBNotes={phaseBNotesFrom(phaseB)}
+          location={phaseB && phaseB.location}
+          onSwitchCareer={() => { setExploreB(null); setScreen('explore_b'); }}
+          onAutosave={(tr) => saveFreeSection({ transcript: tr }, null)}
+          onDone={(fc) => { setFreeCont(fc); saveFreeSection(fc, null); setScreen('explore_hub'); }} />
       )}
 
       {screen === 'done' && (
@@ -337,11 +488,16 @@ function App() {
             phaseB,
             phaseC,
             postSurvey: postAnswers,
-            freeContinuation: freeCont || {},
+            freeContinuation: { ...(freeCont || {}), explorations: explorations.current },
           }}
           onRestart={restart} />
       )}
 
+      {preview && (
+        <div className="preview-badge" title="Researcher test drive — no session row, no autosaves, all gates skippable">
+          PREVIEW · nothing is saved · gates off
+        </div>
+      )}
       {/* The design Tweaks panel is a researcher/dev tool — hidden from real
           participants to keep the flow seamless (Build Plan §16); show with ?test=1. */}
       {testMode && <ThesisTweaks tweaks={tweaks} setTweak={setTweak} />}
@@ -350,12 +506,7 @@ function App() {
       {/* Persistent "restart" chrome (§0): always available mid-run; warns that the
           current attempt is left behind (still saved for the researcher). */}
       {!['landing', 'launcher', 'resume_choice', 'done'].includes(screen) && (
-        <button className="restart-fab" title="Restart survey" onClick={() => {
-          const ok = typeof window.confirm === 'function'
-            ? window.confirm('Restart from the beginning? Your current attempt will be left behind (it stays saved for the researcher) and a fresh one starts.')
-            : true;
-          if (ok) restart();
-        }}>↻ Restart</button>
+        <button className="restart-fab" title="Restart survey" onClick={confirmRestart}>↻ Restart</button>
       )}
     </div>
   );

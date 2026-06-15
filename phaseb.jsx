@@ -12,7 +12,7 @@ const PB_FAMILIARITY = { points: 7, left: 'Not at all familiar', right: 'Very fa
 const PB_INTEREST = { points: 7, left: 'Not at all', right: 'Very strong' };
 const PB_REST_MIN = 20; // recurring rest hint cadence in stage B (§7 Screen 3)
 
-function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
+function PhaseB({ profileData, rec = 'reflective', seedTranscript = [], onDone, onBack, onAutosave }) {
   const { useState, useEffect, useRef } = React;
   const [messages, setMessages] = useState([]);
   const [booting, setBooting] = useState(true);
@@ -29,7 +29,10 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
   const sessionId = useRef(null);
   const scrollRef = useRef(null);
   const lockRef = useRef(null);
+  const taRef = useRef(null);
   const startedAt = useRef(Date.now());
+  const slowReply = useSlowPending(pending || booting); // shared with chat.jsx
+  useEffect(() => { if (!draft) autoGrowTA(taRef.current); }, [draft]);
 
   const restDue = elapsedMin >= nextRest; // gentle, recurring, dismissible (§7)
 
@@ -54,12 +57,26 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
 
   useEffect(() => {
     let cancelled = false;
+    // A resumed run replays the saved transcript into the model (silently) and
+    // renders it, so a refresh mid-conversation continues instead of restarting.
+    const seed = (seedTranscript || [])
+      .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+      .map((m, i) => (m.role === 'user'
+        ? { role: 'user', text: m.text, id: `s${i}`, ts: m.ts || new Date().toISOString() }
+        : { role: 'guide', paras: splitParas(m.text), id: `s${i}`, ts: m.ts || new Date().toISOString() }));
     (async () => {
       try {
-        const { sessionId: sid, opening } = await postJSON('/api/phase-b/session', { profileData, rec });
+        const { sessionId: sid, opening } = await postJSON('/api/phase-b/session', {
+          profileData, rec, priorTranscript: seed.length ? seedTranscript : undefined,
+        });
         if (cancelled) return;
         sessionId.current = sid;
-        setMessages([{ role: 'guide', paras: splitParas(opening), id: 'g0', ts: new Date().toISOString() }]);
+        if (seed.length) {
+          setMessages(seed);
+          setShowLock(true); // they were already deep in — keep the chooser available
+        } else {
+          setMessages([{ role: 'guide', paras: splitParas(opening), id: 'g0', ts: new Date().toISOString() }]);
+        }
       } catch (e) {
         if (cancelled) return;
         setError("Couldn't reach the guide — make sure the server is running.");
@@ -104,13 +121,38 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
   }, [messages]);
 
   // Selecting a recommendation card fills the lock-in choice.
-  const chooseRec = (title) => { setCareer(title); setShowLock(true); };
+  const chooseRec = (title) => { setCareer(title); setCareerNote(null); setShowLock(true); };
 
-  const canLock = career.trim() && familiarity && interest;
-  const lockIn = () => {
+  const [checking, setChecking] = useState(false);
+  const [careerNote, setCareerNote] = useState(null);
+  const isPreview = typeof window !== 'undefined' && window.THESIS_PREVIEW;
+  const recTitles = messages.flatMap((m) => (m.recommendations || []).map((r) => (r.title || '').trim().toLowerCase()));
+  const canLock = (isPreview || (career.trim() && familiarity && interest)) && !checking;
+
+  const lockIn = async () => {
     if (!canLock) return;
+    // Preview test drives may skip the picker entirely — substitute a clearly
+    // labelled placeholder so the role-play never reads "this career". The real
+    // flow can't get here without a validated career (gates + model check).
+    const chosen = career.trim() || (isPreview ? 'Data analyst (preview)' : '');
+    setCareerNote(null);
+    // Free-typed careers get a model sanity check before the role-play can start
+    // (card titles came from the model already). Fail-open: an unreachable check
+    // never blocks the participant.
+    if (chosen && !recTitles.includes(chosen.toLowerCase()) && !isPreview) {
+      setChecking(true);
+      try {
+        const v = await postJSON('/api/validate-career', { career: chosen });
+        if (v && v.ok === false) {
+          setCareerNote(v.hint || "That doesn't read as a career — name a job or professional direction, like 'Data analyst' or 'Teacher'.");
+          setChecking(false);
+          return;
+        }
+      } catch (e) { /* fail-open */ }
+      setChecking(false);
+    }
     onDone({
-      career: career.trim(),
+      career: chosen,
       location: location.trim(),
       familiarity, interestStrength: interest,
       transcript: transcript(),
@@ -163,7 +205,7 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
               {(pending || booting) && (
                 <div className="msg future fade-in">
                   <div className="avatar"><BrandMark size={20} /></div>
-                  <div className="bubble"><div className="typing"><span></span><span></span><span></span></div></div>
+                  <div className="bubble"><TypingBubble slow={slowReply} /></div>
                 </div>
               )}
             </div>
@@ -186,7 +228,8 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
                 {hasRecs ? 'Tap a card above to choose, or type your own. ' : ''}Pick the career you're most curious to experience as your future self — you can explore others later.
               </p>
               <input className="sv-input" placeholder="The career you choose — e.g. Data analyst"
-                value={career} onChange={(e) => setCareer(e.target.value)} />
+                value={career} onChange={(e) => { setCareer(e.target.value); setCareerNote(null); }} />
+              {careerNote && <div className="composer-error" style={{ marginTop: 8, textAlign: 'left' }}>{careerNote}</div>}
               <input className="sv-input" style={{ marginTop: 8 }}
                 placeholder="Where, for the next ten years? — a city, country, region, or 'open' (optional)"
                 value={location} onChange={(e) => setLocation(e.target.value)} />
@@ -197,7 +240,7 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
                   scale={PB_INTEREST} value={interest} onChange={(_, v) => setInterest(v)} />
               </div>
               <button className="btn accent" style={{ marginTop: 12 }} disabled={!canLock} onClick={lockIn}>
-                Step into this future
+                {checking ? 'Checking…' : 'Step into this future'}
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
               {!canLock && (
@@ -219,9 +262,9 @@ function PhaseB({ profileData, rec = 'guide', onDone, onBack, onAutosave }) {
           </div>
         )}
         <div className="composer">
-          <textarea rows={1} placeholder={booting ? 'Connecting…' : 'Reply to the guide…'}
+          <textarea rows={1} ref={taRef} placeholder={booting ? 'Connecting…' : 'Reply to the guide…'}
             value={draft} disabled={booting}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => { setDraft(e.target.value); autoGrowTA(e.target); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(draft); } }} />
           <button className="send" disabled={!draft.trim() || pending || booting} onClick={() => send(draft)} aria-label="Send">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 11V3M3 7l4-4 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
