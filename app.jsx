@@ -69,6 +69,19 @@ function apiSaveSession(id, partial) {
   }).catch(() => {});
 }
 
+// Kick off the optional "day in the life" video as soon as a career is locked in,
+// so it renders during the B→C pause. Returns { enabled, jobId } or { enabled:false }.
+async function apiStartDayInLife(payload) {
+  try {
+    const r = await fetch(PERSIST_BASE + '/api/day-in-life', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json().catch(() => ({}));
+    return d && d.enabled && d.jobId ? { enabled: true, jobId: d.jobId } : { enabled: false };
+  } catch (e) { return { enabled: false }; }
+}
+
 /** Condense the Phase-B dialogue into carry-over notes for the MAIN role-play. */
 function phaseBNotesFrom(pb) {
   if (!pb || !pb.transcript) return '';
@@ -105,6 +118,7 @@ function App() {
   const [profile, setProfile] = useState({ name: '', color: '#b5552f' });
   const [preAnswers, setPreAnswers] = useState({});
   const [phaseB, setPhaseB] = useState(null);     // { career, location, familiarity, interestStrength, transcript }
+  const [dayInLife, setDayInLife] = useState(null); // { enabled, jobId } — optional B→C video
   const [phaseC, setPhaseC] = useState(null);     // { transcript, durationSec, turnCount, ... }
   const [postAnswers, setPostAnswers] = useState({});
   const [freeCont, setFreeCont] = useState(null); // free continuation (logged separately)
@@ -218,7 +232,7 @@ function App() {
     : baseProfile;
 
   const restart = () => {
-    try { localStorage.removeItem(PROGRESS_KEY); localStorage.removeItem('thesis_svpage_v1'); } catch (e) {}
+    try { localStorage.removeItem(PROGRESS_KEY); localStorage.removeItem('thesis_svpage_v2'); } catch (e) {}
     studyId.current = null; // a fresh session row is created at the next consent (§15)
     setProfile({ name: '', color: tweaks.accent });
     setPreAnswers({}); setPhaseB(null); setPhaseC(null); setPostAnswers({});
@@ -357,7 +371,19 @@ function App() {
         <PhaseB profileData={baseProfile} rec={rec}
           seedTranscript={(phaseB && !phaseB.career && phaseB.transcript) || []}
           onAutosave={(tr) => apiSaveSession(studyId.current, { phaseB: { transcript: tr } })}
-          onDone={(pb) => { setPhaseB(pb); apiSaveSession(studyId.current, { phaseB: pb }); setScreen('pause_bc'); }}
+          onDone={(pb) => {
+            setPhaseB(pb); apiSaveSession(studyId.current, { phaseB: pb });
+            // Start the optional day-in-life video now so it renders during the pause.
+            if (preview) { setDayInLife({ enabled: false }); }
+            else {
+              apiStartDayInLife({
+                profileData: { ...baseProfile, career: pb.career, familiarity: pb.familiarity, interestStrength: pb.interestStrength },
+                phaseBNotes: phaseBNotesFrom(pb),
+                location: pb.location,
+              }).then(setDayInLife);
+            }
+            setScreen('pause_bc');
+          }}
           onBack={() => setScreen('presurvey')} />
       )}
 
@@ -367,7 +393,11 @@ function App() {
             "You've chosen a career to step into. Next you'll talk with yourself, ten years from now, living that life.",
             "It's yours to pace — around 20 minutes in, your future self will gently suggest wrapping up, and it closes at 30. A few short questions follow; then you can keep chatting if you like.",
           ]}
-          onContinue={() => setScreen('roleplay')} />
+          onContinue={() => setScreen(dayInLife && dayInLife.enabled && dayInLife.jobId ? 'dayinlife' : 'roleplay')} />
+      )}
+
+      {screen === 'dayinlife' && dayInLife && dayInLife.jobId && (
+        <DayInLife jobId={dayInLife.jobId} onDone={() => setScreen('roleplay')} />
       )}
 
       {screen === 'roleplay' && (
