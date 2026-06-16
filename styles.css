@@ -533,6 +533,13 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 .dil-skip { margin-top: 6px; }
 .dil-spinner { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border-strong); border-top-color: var(--accent); animation: dil-spin 0.8s linear infinite; margin: 8px 0; }
 @keyframes dil-spin { to { transform: rotate(360deg); } }
+/* Rotating-text fallback (when video is unavailable) */
+.dil-rot { max-width: 56ch; min-height: 8.5em; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+.dil-rot-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.dil-rot-text { font-size: 19px; line-height: 1.7; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+.dil-dots { display: flex; gap: 8px; justify-content: center; margin: 2px 0; }
+.dil-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; padding: 0; background: var(--muted-2); cursor: pointer; transition: background .2s ease, transform .2s ease; }
+.dil-dot.on { background: var(--accent); transform: scale(1.25); }
 
 /* Phase B */
 .pb-wrap { max-width: 720px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; }
