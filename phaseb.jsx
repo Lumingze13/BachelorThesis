@@ -45,13 +45,6 @@ function PhaseB({ profileData, rec = 'direct', seedTranscript = [], onDone, onBa
     const el = scrollRef.current; if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending, booting, showLock]);
 
-  // Bring the lock-in card into view once it appears.
-  useEffect(() => {
-    if (showLock && lockRef.current && lockRef.current.scrollIntoView) {
-      lockRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [showLock]);
-
   const guideTurns = messages.filter((m) => m.role === 'guide').length;
   const hasRecs = messages.some((m) => m.recommendations && m.recommendations.length);
 

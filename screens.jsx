@@ -124,7 +124,7 @@ function AvatarCreation({ value, onChange }) {
 
         <div className="field-block">
           <label className="field-label">Your name (or a name to go by)</label>
-          <input className="text-input" placeholder="e.g. Maya, Sam, Alex…" value={name} onChange={(e) => set({ name: e.target.value })} autoFocus/>
+          <input className="text-input" placeholder="e.g. Maya, Sam, Alex…" value={name} onChange={(e) => set({ name: e.target.value })}/>
         </div>
 
         <div className="field-block">
@@ -219,7 +219,7 @@ function Questionnaire({ answers, onChange, currentIndex }) {
       )}
 
       {q.kind === 'textarea' && (
-        <textarea className="text-input" placeholder={q.placeholder || 'Take your time…'} value={value} onChange={(e) => set(e.target.value)} rows={4} autoFocus/>
+        <textarea className="text-input" placeholder={q.placeholder || 'Take your time…'} value={value} onChange={(e) => set(e.target.value)} rows={4}/>
       )}
 
       {q.kind === 'career' && (

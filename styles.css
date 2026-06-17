@@ -208,7 +208,10 @@ input, textarea { font-family: inherit; color: inherit; }
 .flow { flex: 1; display: flex; flex-direction: column; }
 .flow-progress { height: 2px; background: var(--surface-2); position: relative; }
 .flow-progress .bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); transition: width .35s cubic-bezier(.2,.7,.2,1); }
-.flow-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 44px 28px 28px; }
+/* Top-align by default so every screen opens from the top — never parked mid-page.
+   (Tall screens centered with align-items:center get their top clipped above the
+   scroll origin, which is what made the avatar screen "jump to the middle".) */
+.flow-body { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 44px 28px 28px; }
 .flow-foot {
   display: flex; justify-content: space-between; align-items: center;
   padding: 14px 28px 28px; max-width: 760px; width: 100%; margin: 0 auto; gap: 12px;
@@ -228,6 +231,9 @@ input, textarea { font-family: inherit; color: inherit; }
 .avatar-screen {
   width: 100%; max-width: 760px;
   display: grid; grid-template-columns: 280px 1fr; gap: 56px; align-items: center;
+  /* Safe vertical centering: centers in the viewport when it fits, but collapses
+     to the top (and scrolls) when it's taller — so it never starts mid-page. */
+  margin-block: auto;
 }
 @media (max-width: 720px) { .avatar-screen { grid-template-columns: 1fr; gap: 32px; text-align: center; } }
 

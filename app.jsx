@@ -8,7 +8,7 @@
  * Everything is held in React state; nothing is persisted (no DB). The full
  * session record can be downloaded as JSON on the closure screen.
  */
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useLayoutEffect, useRef } = React;
 
 const DEFAULT_TWEAKS = /*EDITMODE-BEGIN*/{
   "theme": "dark",
@@ -208,6 +208,22 @@ function App() {
     } catch (e) { /* storage unavailable — non-blocking */ }
   }, [screen, profile, preAnswers, phaseB, phaseC, postAnswers]);
 
+  // --- Scroll memory ---------------------------------------------------------
+  // Every screen opens at the very top on first view, and is restored to exactly
+  // where the participant left it when they come back (Back, resume, re-entry).
+  // The window is the page scroller; nothing scrolls without a user navigation.
+  const scrollPos = useRef({});
+  const scrollKeyRef = useRef(null);
+  useEffect(() => {
+    const onScroll = () => { if (scrollKeyRef.current != null) scrollPos.current[scrollKeyRef.current] = window.scrollY; };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  useLayoutEffect(() => {
+    scrollKeyRef.current = screen;
+    window.scrollTo(0, scrollPos.current[screen] || 0); // 0 = top on first visit; saved offset on return
+  }, [screen]);
+
   const setPre = (id, v) => setPreAnswers(prev => ({ ...prev, [id]: v }));
   const setPost = (id, v) => setPostAnswers(prev => ({ ...prev, [id]: v }));
 
@@ -218,7 +234,7 @@ function App() {
     : baseProfile;
 
   const restart = () => {
-    try { localStorage.removeItem(PROGRESS_KEY); localStorage.removeItem('thesis_svpage_v3'); } catch (e) {}
+    try { localStorage.removeItem(PROGRESS_KEY); localStorage.removeItem('thesis_svpage_v4'); } catch (e) {}
     studyId.current = null; // a fresh session row is created at the next consent (§15)
     setProfile({ name: '', color: tweaks.accent });
     setPreAnswers({}); setPhaseB(null); setPhaseC(null); setPostAnswers({});
