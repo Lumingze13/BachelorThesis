@@ -97,13 +97,6 @@ const MANIPULATION = [
   { id: 'mc_understand', text: 'My future self seemed to genuinely understand my current situation and who I am.' },
 ];
 
-// Andrea's reflective-vs-direct manipulation checks (Brief v4.4 Appendix F.2).
-// Rendered only when study=andrea — they probe the phase-b recommendation style,
-// not Kangzhi's phase-c design components.
-const ANDREA_MANIPULATION = [
-  { id: 'mc_autonomy', text: 'The chatbot helped me explore my own thinking rather than telling me what to choose.' },
-  { id: 'mc_ownership', text: 'The career direction I selected felt like a conclusion I reached myself.' },
-];
 // Open-ended — exactly 2 (supervisor instruction, Build Plan §10.2). Dropped:
 // "did the voice remind you of yourself" (redundant with manipulation check 1)
 // and "what shifted in how you picture yourself" (carried by CDSE/CIP).
@@ -438,7 +431,7 @@ function buildPreSections(answers, onChange) {
   ];
 }
 
-function buildPostSections(answers, onChange, career, study = 'kangzhi') {
+function buildPostSections(answers, onChange, career) {
   const set = (id, v) => onChange(id, v);
   // Post future-self items reuse the SAME ids as pre but with a "_post" suffix.
   const vivPost = VIVIDNESS.map((i) => ({ ...i, id: i.id + '_post' }));
@@ -489,12 +482,6 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
       ids: MANIPULATION.map((i) => i.id),
       node: <LikertGrid items={MANIPULATION} scale={AGREE7} answers={answers} onChange={set} />,
     },
-    ...(study === 'andrea' ? [{
-      title: 'About choosing your direction',
-      intro: 'How much do you agree?',
-      ids: ANDREA_MANIPULATION.map((i) => i.id),
-      node: <LikertGrid items={ANDREA_MANIPULATION} scale={AGREE7} answers={answers} onChange={set} />,
-    }] : []),
     {
       title: 'In your own words',
       intro: 'A few honest lines for each — there are no right answers.',
@@ -536,10 +523,11 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
 
 // --- Paged survey container ------------------------------------------------
 
-// v3: bumped whenever the pre/post page set changes (17 Jun 2026: FSCS continuity
-// restored, CDSE + CIP-CCA replaced by a single CIP-LR page) so stale saved page
-// indices reset.
-const SVPAGE_KEY = 'thesis_svpage_v3';
+// v4: bumped whenever the pre/post page set changes (17 Jun 2026: dropped
+// Andrea's reflective-vs-direct manipulation-check page — she confirmed it is
+// no longer needed, so the post page set is identical across all study tags)
+// so stale saved page indices reset.
+const SVPAGE_KEY = 'thesis_svpage_v4';
 const readSvPage = (k) => {
   try { return Number(JSON.parse(localStorage.getItem(SVPAGE_KEY) || '{}')[k]) || 0; } catch (e) { return 0; }
 };
@@ -641,10 +629,10 @@ function PreSurvey({ answers, onChange, onDone, onBack }) {
   );
 }
 
-function PostSurvey({ answers, onChange, onDone, career, study }) {
+function PostSurvey({ answers, onChange, onDone, career }) {
   return (
     <PagedSurvey eyebrow="Final step · Reflection" storageKey="post"
-      sections={buildPostSections(answers, onChange, career, study)}
+      sections={buildPostSections(answers, onChange, career)}
       answers={answers} onChange={onChange} onDone={onDone} />
   );
 }

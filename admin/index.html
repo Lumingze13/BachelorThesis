@@ -625,11 +625,14 @@ function SimView() {
 
 // --- Launcher: pick a chatbot version (study cell), batch-mint participant
 // links with sequential PIDs, copy the list, send each link to one participant.
+// direct × main is the shared cell — it is simultaneously Kangzhi's "main" arm
+// and Andrea's "direct" arm. Since Andrea dropped her manipulation-check page,
+// the two are now an identical run, so they collapse into one shared link
+// (study=shared, S-prefixed PIDs) instead of separate K/A links.
 const LAUNCH_CELLS = [
-  { key: 'k-main', label: 'Kangzhi · direct × main', study: 'kangzhi', rec: 'direct', cond: 'main', prefix: 'K' },
+  { key: 'shared', label: 'Shared · direct × main (Kangzhi main + Andrea direct)', study: 'shared', rec: 'direct', cond: 'main', prefix: 'S' },
   { key: 'k-base', label: 'Kangzhi · direct × baseline', study: 'kangzhi', rec: 'direct', cond: 'baseline', prefix: 'K' },
   { key: 'a-refl', label: 'Andrea · reflective × main', study: 'andrea', rec: 'reflective', cond: 'main', prefix: 'A' },
-  { key: 'a-dir', label: 'Andrea · direct × main', study: 'andrea', rec: 'direct', cond: 'main', prefix: 'A' },
   { key: 'custom', label: 'Custom combination', custom: true, prefix: 'X' },
 ];
 
@@ -640,10 +643,10 @@ const readBatches = () => { try { return JSON.parse(localStorage.getItem(BATCH_K
 const writeBatches = (b) => { try { localStorage.setItem(BATCH_KEY, JSON.stringify(b.slice(0, 30))); } catch (e) {} };
 
 function RecruitView() {
-  const [cellKey, setCellKey] = useState('k-main');
+  const [cellKey, setCellKey] = useState('shared');
   const [custom, setCustom] = useState({ study: 'kangzhi', rec: 'direct', cond: 'main' });
   const [count, setCount] = useState(5);
-  const [prefix, setPrefix] = useState('K');
+  const [prefix, setPrefix] = useState('S');
   const [start, setStart] = useState(1);
   const [busy, setBusy] = useState(false);
   const [batches, setBatches] = useState(readBatches);

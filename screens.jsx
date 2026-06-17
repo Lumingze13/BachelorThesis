@@ -394,7 +394,10 @@ function ComfortSettings({ tweaks, setTweak }) {
    ============================================================ */
 // Default stage-B = direct (v5.3 §6): Kangzhi's two cells use the direct prompt;
 // reflective is Andrea's other arm; the guide prompt is a legacy backup (rec=guide).
+// `shared` = the direct × main overlap cell that serves both studies at once
+// (Kangzhi's main arm + Andrea's direct arm).
 const INTENDED_COMBOS = {
+  shared: [['direct', 'main']],
   kangzhi: [['direct', 'main'], ['direct', 'baseline']],
   andrea: [['reflective', 'main'], ['direct', 'main']],
 };
@@ -433,7 +436,7 @@ function Launcher({ condition, rec, study, pid, onStart }) {
           <p className="sv-intro">Pick the two routing axes, then start. Real participants open a fixed personal link and skip this entirely.</p>
           <Seg label="Rec — stage B prompt" cur={rec} k="rec" opts={['reflective', 'direct', 'guide']} />
           <Seg label="Cond — stage C prompt" cur={condition} k="cond" opts={['main', 'baseline']} />
-          <Seg label="Study tag" cur={study} k="study" opts={['kangzhi', 'andrea']} />
+          <Seg label="Study tag" cur={study} k="study" opts={['shared', 'kangzhi', 'andrea']} />
           <p className="sv-hint" style={{ marginTop: 6 }}>
             Current: study=<b>{study}</b> · rec=<b>{rec}</b> · cond=<b>{condition}</b>{pid ? <> · pid=<b>{pid}</b></> : null}
             {isIntended(study, rec, condition) ? null : <span className="muted"> · ⚠ non-standard combo</span>}

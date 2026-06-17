@@ -397,7 +397,7 @@ function App() {
       )}
 
       {screen === 'postsurvey' && (
-        <PostSurvey answers={postAnswers} onChange={setPost} career={phaseB && phaseB.career} study={study}
+        <PostSurvey answers={postAnswers} onChange={setPost} career={phaseB && phaseB.career}
           onDone={() => {
             apiSaveSession(studyId.current, {
               postSurvey: postAnswers,
