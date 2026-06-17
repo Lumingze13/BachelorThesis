@@ -107,9 +107,10 @@ input, textarea, select { font-family: inherit; color: inherit; font-size: 16px;
   font-size: 14.5px; font-weight: 500;
   border: 1px solid transparent;
   background: var(--ink); color: var(--bg);
-  transition: opacity .15s ease, background .15s ease, border-color .15s ease;
+  transition: opacity .15s ease, background .15s ease, border-color .15s ease, transform .1s ease;
 }
 .btn:hover { opacity: .88; }
+.btn:active:not(:disabled) { transform: scale(0.97); } /* tactile press */
 .btn:disabled { opacity: .35; cursor: not-allowed; }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--border-strong); }
 .btn.ghost:hover { background: var(--surface-2); opacity: 1; }
@@ -651,8 +652,10 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 /* Center the panel when it fits; the auto cross-axis margins collapse to a
    top-aligned, scrollable layout the moment it's taller than the viewport — so
    short screens (pause, consent, closure) sit balanced in the middle while a
-   long survey still opens from the top with nothing clipped. */
-.flow-body > .sv-wrap, .flow-body > .pb-wrap { margin-block: auto; }
+   long survey still opens from the top with nothing clipped.
+   NB: only the sv-wrap screens — the phase-B chat (.pb-wrap) must stay top-
+   aligned so its thread grows from the top with the composer pinned below. */
+.flow-body > .sv-wrap { margin-block: auto; }
 
 /* ====================================================================
    Comfort & display settings (participant accessibility — Build Plan §16/§16a)

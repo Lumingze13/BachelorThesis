@@ -11,7 +11,7 @@ await new Promise(r=>server.listen(5599,r));
 const RECS=[{title:'Data analyst',why:'You like turning messy data into clear, honest stories people can act on.',path:'SQL + one stats course, then an analytics internship.'},{title:'Product manager',why:'You organise people and ideas and hold the through-line.',path:'Join an APM programme; ship one small project end to end.'}];
 const b = await chromium.launch({ args:['--ignore-certificate-errors'] });
 async function cap(vp){
-  const ctx = await b.newContext({viewport:{width:vp.w,height:vp.h}, deviceScaleFactor:2, ignoreHTTPSErrors:true});
+  const ctx = await b.newContext({viewport:{width:vp.w,height:vp.h}, deviceScaleFactor:1, ignoreHTTPSErrors:true});
   const page = await ctx.newPage();
   await page.route('**/api/**', r=>{const u=r.request().url();let d={ok:true};
     if(u.includes('/api/phase-b/session'))d={sessionId:'pb1',opening:'Before we step in — what in your studies genuinely pulls you in right now?'};

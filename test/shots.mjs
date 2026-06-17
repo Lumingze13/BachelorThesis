@@ -29,7 +29,7 @@ const BASE = `http://localhost:${PORT}/`;
 const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844 },
   { name: 'laptop', width: 1440, height: 900 },
-  { name: 'desktop', width: 2560, height: 1440 },
+  { name: 'desktop', width: 1920, height: 1200 },
 ];
 
 const RECS = [
@@ -67,7 +67,7 @@ async function autofillPage(page) {
 }
 
 async function run(vp) {
-  const ctx = await chromium.launchPersistentContext('', { viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 2 }).catch(() => null);
+  const ctx = await chromium.launchPersistentContext('', { viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 1 }).catch(() => null);
   return ctx;
 }
 
@@ -78,7 +78,7 @@ const want = process.argv.slice(2);
 const pick = (name) => !want.length || want.includes(name);
 
 for (const vp of VIEWPORTS) {
-  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 2, ignoreHTTPSErrors: true });
+  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 1, ignoreHTTPSErrors: true });
   const page = await ctx.newPage();
   await mock(page);
   const shot = async (name) => { await settle(page); await page.screenshot({ path: path.join(OUT, `${name}.${vp.name}.png`) }); console.log('  ✓', `${name}.${vp.name}`); };
