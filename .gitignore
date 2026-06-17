@@ -17,3 +17,4 @@ eval_pipeline/out/
 # raw open datasets (keep out of git)
 data/*.csv
 data/*.zip
+shots/

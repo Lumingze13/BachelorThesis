@@ -230,7 +230,8 @@ input, textarea, select { font-family: inherit; color: inherit; font-size: 16px;
   display: flex; justify-content: space-between; align-items: center;
   padding: 14px 28px 28px; max-width: 760px; width: 100%; margin: 0 auto; gap: 12px;
 }
-.flow-foot .step-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.flow-foot .step-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; white-space: nowrap; }
+@media (max-width: 560px) { .flow-foot { padding: 12px 16px 22px; gap: 8px; } }
 
 /* ---------- Monogram avatar ---------- */
 .monogram {
@@ -511,6 +512,16 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 .sv-pt:hover { border-color: var(--accent); color: var(--ink); }
 .sv-pt.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+/* Mobile: the inline left/right anchor labels were squeezing the 7 points so
+   options 6 & 7 fell off the screen. Drop the labels onto a line below and let
+   the points span the full row width. */
+@media (max-width: 560px) {
+  .sv-scale-row { flex-wrap: wrap; gap: 8px; }
+  .sv-scale-pts { order: -1; flex-basis: 100%; justify-content: space-between; gap: 4px; }
+  .sv-scale-end { flex: 1 1 auto; max-width: none; font-size: 11px; }
+  .sv-scale-end:last-child { text-align: right; }
+}
+
 .sv-ios { display: flex; flex-direction: column; gap: 8px; }
 .sv-ios-row { display: flex; gap: 4px; justify-content: space-between; flex-wrap: wrap; }
 .sv-ios-opt {
@@ -750,3 +761,18 @@ body:has(.chat-app) .restart-fab { display: none; }
   text-transform: uppercase; color: var(--muted);
 }
 .history-note::before, .history-note::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+/* ====================================================================
+   Large displays (≈24–27"): scale the display type up so the centred
+   column reads as an intentional editorial layout rather than a small
+   block adrift in a wide dark field. Laptops/tablets keep their clamps.
+   ==================================================================== */
+@media (min-width: 1600px) {
+  .hero-title { font-size: clamp(64px, 5vw, 88px); }
+  .hero-sub { font-size: 19px; max-width: 56ch; }
+  .section-title { font-size: clamp(42px, 3.2vw, 52px); }
+  .sv-title { font-size: clamp(38px, 2.8vw, 48px); }
+  .q-prompt { font-size: clamp(38px, 3vw, 48px); }
+  .sv-wrap { max-width: 700px; }
+  .chat-thread, .msg .bubble { max-width: 760px; }
+}
