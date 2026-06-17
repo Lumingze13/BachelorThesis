@@ -628,11 +628,11 @@ function Chat({
     strokeWidth: "1.6",
     strokeLinecap: "round",
     strokeLinejoin: "round"
-  })))), React.createElement("div", {
+  })))), saveState && React.createElement("div", {
     className: "composer-foot"
-  }, "Ask whatever you actually want to know \u2014 big or small.", saveState && React.createElement("span", {
+  }, React.createElement("span", {
     className: "save-note"
-  }, saveState === 'saving' ? ' · Saving…' : ' · Progress saved ✓')))));
+  }, saveState === 'saving' ? 'Saving…' : 'Progress saved ✓')))));
 }
 function FreeContinuation({
   profile = {},
