@@ -29,14 +29,14 @@ function assertValidSequence(messages, who) {
 
 // Stub LLM: routes by system prompt; validates sequences; returns deterministic text.
 function stubLlm(system, messages) {
-  const isSim = system.includes('role-playing a real University of Amsterdam student');
+  const isSim = system.includes('role-playing a real university student');
   if (isSim) { assertValidSequence(messages, 'SIM'); simCalls += 1; return `SIM utterance ${simCalls}`; }
   assertValidSequence(messages, 'BOT'); botCalls += 1; return `BOT utterance ${botCalls}`;
 }
 
 const profileData = {
   year: 'First year',
-  demographics: { age: 19, gender: 'Man', major: 'Economics & Business' },
+  demographics: { age: 19, gender: 'Man', major: 'Psychology' },
   bigFive: { O: 3, C: 3, E: 5, A: 3, N: 4 },
   values: ['Achievement', 'Influence / leadership'],
   riasec: { R: 2, I: 3, A: 2, S: 3, E: 5, C: 4 },

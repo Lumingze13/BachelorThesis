@@ -1,6 +1,6 @@
 # Thesis — Future-Self Career Chatbot + Study Platform
 
-A no-build React frontend + Express backend that lets Economics & Business
+A no-build React frontend + Express backend that lets university
 students converse with a 10-year **future self**, wrapped in a small **study
 platform**: every session is persisted to Postgres, a gated **admin dashboard**
 manages sessions and exports, and the **evaluation pipeline** (`eval_pipeline/`,

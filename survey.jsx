@@ -96,6 +96,14 @@ const MANIPULATION = [
   { id: 'mc_scene', text: 'My future self described their life through specific, concrete moments rather than vague generalities.' },
   { id: 'mc_understand', text: 'My future self seemed to genuinely understand my current situation and who I am.' },
 ];
+
+// Andrea's reflective-vs-direct manipulation checks (Brief v4.4 Appendix F.2).
+// Rendered only when study=andrea — they probe the phase-b recommendation style,
+// not Kangzhi's phase-c design components.
+const ANDREA_MANIPULATION = [
+  { id: 'mc_autonomy', text: 'The chatbot helped me explore my own thinking rather than telling me what to choose.' },
+  { id: 'mc_ownership', text: 'The career direction I selected felt like a conclusion I reached myself.' },
+];
 // Open-ended — exactly 2 (supervisor instruction, Build Plan §10.2). Dropped:
 // "did the voice remind you of yourself" (redundant with manipulation check 1)
 // and "what shifted in how you picture yourself" (carried by CDSE/CIP).
@@ -293,7 +301,7 @@ function buildPreSections(answers, onChange) {
   return [
     {
       title: 'A little about you',
-      intro: 'This prototype is for Economics & Business students at the UvA.',
+      intro: 'Open to university students of any major, any year, at any university.',
       ids: ['age', 'gender', 'year', ...(answers.year === 'Something else' ? ['year_custom'] : [])],
       node: (
         <div className="sv-section">
@@ -310,7 +318,7 @@ function buildPreSections(answers, onChange) {
           <div className="sv-field">
             <span className="sv-label">Where are you in your studies?</span>
             <ChoiceField id="year" value={answers.year} onChange={set}
-              options={['First year', 'Second year', 'Third year', 'Something else']} />
+              options={['First year', 'Second year', 'Third year', 'Fourth year', 'Something else']} />
           </div>
           {answers.year === 'Something else' && (
             <label className="sv-field">
@@ -321,8 +329,8 @@ function buildPreSections(answers, onChange) {
           )}
           <label className="sv-field">
             <span className="sv-label">Programme / major</span>
-            <input className="sv-input" type="text"
-              value={answers.major === undefined ? 'Economics & Business' : answers.major}
+            <input className="sv-input" type="text" placeholder="e.g. Psychology, Computer Science, Law"
+              value={answers.major || ''}
               onChange={(e) => set('major', e.target.value)} />
           </label>
         </div>
@@ -481,6 +489,12 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
       ids: MANIPULATION.map((i) => i.id),
       node: <LikertGrid items={MANIPULATION} scale={AGREE7} answers={answers} onChange={set} />,
     },
+    ...(study === 'andrea' ? [{
+      title: 'About choosing your direction',
+      intro: 'How much do you agree?',
+      ids: ANDREA_MANIPULATION.map((i) => i.id),
+      node: <LikertGrid items={ANDREA_MANIPULATION} scale={AGREE7} answers={answers} onChange={set} />,
+    }] : []),
     {
       title: 'In your own words',
       intro: 'A few honest lines for each — there are no right answers.',
@@ -504,15 +518,15 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
       node: (
         <div className="sv-section">
           <div className="sv-field">
-            <span className="sv-label">Would you be willing to do a short (~15 min) follow-up interview about your experience?</span>
+            <span className="sv-label">Would you be open to a short (~15 min) follow-up interview about your experience?</span>
             <ChoiceField id="interview" value={answers.interview} onChange={set} options={['Yes', 'No']} />
           </div>
           {answers.interview === 'Yes' && (
-            <label className="sv-field">
-              <span className="sv-label">How can we reach you? (email)</span>
-              <input className="sv-input" type="email" value={answers.contact || ''}
-                onChange={(e) => set('contact', e.target.value)} />
-            </label>
+            <p className="sv-intro" style={{ marginTop: 4 }}>
+              Thank you! We don't collect any contact details here — if you'd like to take part, just
+              email the team at <a href="mailto:thy.le@student.uva.nl">thy.le@student.uva.nl</a> and
+              we'll arrange a time.
+            </p>
           )}
         </div>
       ),
@@ -687,7 +701,7 @@ function topWorkValues(pre) {
 
 // Build the structured profileData the backend prompts expect (career added later).
 function buildProfileData(pre) {
-  const major = pre.major === undefined ? 'Economics & Business' : (pre.major || 'Economics & Business');
+  const major = (pre.major || '').trim();
   const year = pre.year === 'Something else' && pre.year_custom ? `Year ${pre.year_custom}` : pre.year;
   return {
     year,

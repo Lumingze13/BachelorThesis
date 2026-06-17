@@ -49,12 +49,14 @@ def _build_d0(session: Dict[str, Any]) -> str:
     age = pre.get("age", "unknown")
     gender = pre.get("gender", "unknown")
     year = pre.get("year", "unknown")
+    major = (pre.get("major") or "").strip()
     name = profile.get("name", "the participant")
     career = phase_b.get("career", "unknown career")
 
+    studying = f" studying {major}" if major else ""
     return (
-        f"You are playing the role of {name}, a {age}-year-old {gender} student "
-        f"in their {year} year studying Economics & Business at university. "
+        f"You are playing the role of {name}, a {age}-year-old {gender} university student "
+        f"in their {year} year{studying}. "
         f"They participated in a future-self career exercise focused on the career path: {career}. "
         "Respond as this person would, based only on these demographic details."
     )

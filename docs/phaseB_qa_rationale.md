@@ -14,7 +14,7 @@ A few things the scales can't surface on their own:
 
 - **What the student currently wants.** Trade-offs between impact, stability, autonomy, money, and people shift with mood, term, and life stage. A short conversation catches the *current* weighting; a one-off questionnaire freezes a single snapshot.
 - **What they already have in mind.** Many students arrive with a vague pull toward something. Ignoring that and handing them a computed list reads as the app not listening.
-- **Options they don't know exist.** First- and second-year Economics & Business students haven't met most of the roles their profile would fit. The guide can gently stretch beyond the obvious defaults — which a lookup table keyed on RIASEC can't do.
+- **Options they don't know exist.** University students haven't met most of the roles their profile would fit. The guide can gently stretch beyond the obvious defaults — which a lookup table keyed on RIASEC can't do.
 - **Geography that has to be realistic.** The career has to make sense in the place they're drawn to. That only comes up in conversation, and it matters before they commit.
 
 ## Why it's a conversation, not three more survey items

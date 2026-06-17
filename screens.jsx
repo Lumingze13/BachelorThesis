@@ -23,7 +23,7 @@ function Landing({ onBegin }) {
           Talk to <em>you</em>,<br/>ten years into a career.
         </h1>
         <p className="hero-sub">
-          Thesis lets Economics &amp; Business students step into a vivid role-play
+          Thesis lets university students step into a vivid role-play
           with a version of themselves a decade from now — already working in a career
           they're curious about. Not to be told what to do, but to feel what that
           future might actually be like.
@@ -154,11 +154,11 @@ const QUESTIONS = [
     id: 'year',
     eyebrow: 'CONTEXT',
     prompt: 'Where are you in your studies?',
-    hint: 'This is a prototype for Economics & Business students at the UvA.',
+    hint: 'Open to university students of any major, any year, at any university.',
     kind: 'choices',
     options: [
-      { id: 'y1', ttl: 'First year', desc: 'BSc Economics & Business' },
-      { id: 'y2', ttl: 'Second year', desc: 'BSc Economics & Business' },
+      { id: 'y1', ttl: 'First year', desc: 'Undergraduate' },
+      { id: 'y2', ttl: 'Second year', desc: 'Undergraduate' },
       { id: 'other', ttl: 'Something else', desc: 'Another year or programme' },
     ],
   },

@@ -543,8 +543,8 @@ function Closure({ study, onRestart }) {
             and not a recommendation.
           </p>
           <p className="sv-intro" style={{ maxWidth: '46ch', margin: '0 auto 24px', color: 'var(--muted)' }}>
-            Your responses have been saved — thank you for taking part. If you opted in to a follow-up
-            interview, the researcher will reach out using the contact you left.
+            Your responses have been saved — thank you for taking part. If you'd like to take part in a
+            short follow-up interview, email the team at thy.le@student.uva.nl.
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button className="btn ghost" onClick={download}>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 select_cohort.py — pick the N participants that best match our study frame
-(young Economics & Business / Business-Analytics-leaning undergraduates) from the
+(young university undergraduates of any major) from the
 open-source Holland Code (RIASEC) dataset (openpsychometrics / Kaggle).
 
 WHY: the dataset has no "business analytics student" field. We approximate the
