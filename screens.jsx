@@ -328,14 +328,16 @@ function Pause({ title, lines = [], cta = 'Continue', eyebrow = 'Take a breath',
    motion. Theme routes through the shared tweak (one source of truth); the rest
    are applied as data-attributes on <html> (see styles.css) and remembered in
    localStorage. Shown to everyone — unlike the researcher Tweaks panel.
-   To match the Build Plan's opinionated defaults (A++/Dark/Roomy/Wide), change
-   COMFORT_DEFAULTS + the theme default; kept neutral here so nothing looks off.
+   The Build Plan's opinionated maxima (A+++/Roomy/Wide) are all still one tap
+   away in the panel; the *default* is a neutral, premium baseline so the app
+   reads as a considered design on first load rather than an oversized form.
    ============================================================ */
-// v3 key: defaults changed 2026-06-11 — reading font Sans, text size MAX
-// (A+++); bumping the key applies the new defaults to devices that stored old
-// ones. Serif and smaller sizes stay available in the panel.
-const COMFORT_KEY = 'thesis_comfort_v3';
-const COMFORT_DEFAULTS = { size: 'xl', spacing: 'roomy', width: 'wide', motion: 'full', font: 'sans' };
+// v4 key: default tuned 2026-06-17 to a neutral baseline (A+ / Cozy / Normal)
+// for a premium first impression. Bumping the key re-applies it to devices that
+// stored the old v3 maxima. Larger sizes, roomy spacing and wide measure all
+// stay available in the panel for anyone who wants them.
+const COMFORT_KEY = 'thesis_comfort_v4';
+const COMFORT_DEFAULTS = { size: 'md', spacing: 'cozy', width: 'normal', motion: 'full', font: 'sans' };
 
 function ComfortSettings({ tweaks, setTweak }) {
   const [open, setOpen] = React.useState(false);

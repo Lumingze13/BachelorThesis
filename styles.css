@@ -124,6 +124,13 @@ input, textarea, select { font-family: inherit; color: inherit; font-size: 16px;
   display: flex; flex-direction: column; align-items: center;
 }
 @media (max-width: 700px) { .landing-hero { padding-top: 48px; } }
+/* Tall screens: center the hero in the viewport so large displays read as a
+   balanced composition rather than content pinned near the top. Mobile stays
+   top-aligned so the primary action sits within thumb reach. */
+@media (min-width: 700px) {
+  [data-screen-label="01 Landing"] { display: flex; flex-direction: column; min-height: 100dvh; }
+  .landing-hero { flex: 1; justify-content: center; padding-top: 40px; }
+}
 
 .eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
@@ -553,6 +560,21 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 .sv-choice:hover:not(:disabled) { border-color: var(--accent); }
 .sv-choice.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
 .sv-choice:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Single-select rows carry a radio dot on the right: it anchors the trailing
+   space short labels leave and makes the choose-one affordance explicit.
+   (Multi-select uses auto-width chips, which read fine without it.) */
+.sv-choices .sv-choice { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.sv-choices .sv-choice::after {
+  content: ""; width: 18px; height: 18px; border-radius: 50%; flex: none;
+  border: 1.5px solid var(--border-strong);
+  transition: border-color .14s ease, background .14s ease;
+}
+.sv-choices .sv-choice:hover:not(:disabled)::after { border-color: var(--accent); }
+.sv-choices .sv-choice.on::after {
+  border-color: var(--accent);
+  background: radial-gradient(circle at center, var(--accent) 0 5px, transparent 5.5px);
+}
 
 /* Consent */
 .consent-title { font-family: var(--font-serif); font-size: 30px; font-weight: 400; margin: 6px 0 16px; }
