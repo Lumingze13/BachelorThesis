@@ -648,6 +648,11 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 
 /* Let long survey / phase-b pages scroll from the top instead of clipping */
 .flow-body:has(.sv-wrap), .flow-body:has(.pb-wrap) { align-items: flex-start; overflow-y: auto; }
+/* Center the panel when it fits; the auto cross-axis margins collapse to a
+   top-aligned, scrollable layout the moment it's taller than the viewport — so
+   short screens (pause, consent, closure) sit balanced in the middle while a
+   long survey still opens from the top with nothing clipped. */
+.flow-body > .sv-wrap, .flow-body > .pb-wrap { margin-block: auto; }
 
 /* ====================================================================
    Comfort & display settings (participant accessibility — Build Plan §16/§16a)
