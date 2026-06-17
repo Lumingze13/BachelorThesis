@@ -260,6 +260,13 @@ function App() {
     if (ok) restart();
   };
 
+  // Per-phase "Back" from the pause screens. Where stepping back discards or
+  // re-opens work, guard it with a confirm so a stray click never wipes a phase.
+  const confirmBack = (msg, action) => {
+    const ok = typeof window.confirm === 'function' ? window.confirm(msg) : true;
+    if (ok) action();
+  };
+
   // Resume-or-restart (Build Plan §13a): restore the saved snapshot, or start
   // fresh. The snapshot is merged with the SERVER row when one exists — the
   // per-turn autosaves there hold the mid-chat transcript and the conversation
@@ -374,7 +381,9 @@ function App() {
             "That's the questionnaire done.",
             "Next, a short conversation to explore some career directions — you'll pick one to step into. Rest a moment, and continue when you're ready.",
           ]}
-          onContinue={() => setScreen('phaseb')} />
+          onContinue={() => setScreen('phaseb')}
+          /* Non-destructive: pre-survey answers are kept, so no confirm. */
+          onBack={() => setScreen('presurvey')} />
       )}
 
       {screen === 'phaseb' && (
@@ -394,7 +403,12 @@ function App() {
             "You've chosen a career to step into. Next you'll talk with yourself, ten years from now, living that life.",
             "It's yours to pace — around 20 minutes in, your future self will gently suggest wrapping up, and it closes at 30. A few short questions follow; then you can keep chatting if you like.",
           ]}
-          onContinue={() => setScreen('roleplay')} />
+          onContinue={() => setScreen('roleplay')}
+          /* Destructive: stepping back re-opens direction-finding and the chosen
+             career won't carry over — confirm first. */
+          onBack={() => confirmBack(
+            `Go back to find a direction again?${phaseB && phaseB.career ? ` Your choice (${phaseB.career}) won't carry over` : ''} — you'll pick one again.`,
+            () => { setPhaseB(null); setScreen('phaseb'); })} />
       )}
 
       {screen === 'roleplay' && (
@@ -417,7 +431,12 @@ function App() {
             "A few short questions about how that felt — then the session opens up: you can keep chatting, or step into other careers, for as long as you like.",
             "Take a breath, and continue when you're ready.",
           ]}
-          onContinue={() => setScreen('postsurvey')} />
+          onContinue={() => setScreen('postsurvey')}
+          /* Re-opens the role-play where it ended (resumes, nothing lost) — but
+             confirm, since the conversation had been wrapped up. */
+          onBack={() => confirmBack(
+            "Go back into the conversation? You'll return to where it ended and can keep talking before the questions.",
+            () => { resumedC.current = true; setScreen('roleplay'); })} />
       )}
 
       {screen === 'postsurvey' && (

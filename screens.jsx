@@ -297,7 +297,7 @@ function Consent({ onAgree, onBack }) {
    The B→C pause's Continue is what starts the Phase-C clock (the role-play
    mounts on continue), so resting here costs no conversation time.
    ============================================================ */
-function Pause({ title, lines = [], cta = 'Continue', eyebrow = 'Take a breath', onContinue }) {
+function Pause({ title, lines = [], cta = 'Continue', eyebrow = 'Take a breath', onContinue, onBack }) {
   return (
     <div className="flow">
       <nav className="topnav">
@@ -312,10 +312,18 @@ function Pause({ title, lines = [], cta = 'Continue', eyebrow = 'Take a breath',
             <p key={i} className="sv-intro"
               style={{ maxWidth: '48ch', margin: '0 auto 14px', color: i ? 'var(--muted)' : undefined }}>{t}</p>
           ))}
-          <button className="btn accent" style={{ marginTop: 10 }} onClick={onContinue}>
-            {cta}
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
+          <div className="pause-actions">
+            <button className="btn accent" onClick={onContinue}>
+              {cta}
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+            {onBack && (
+              <button className="btn ghost sm pause-back" onClick={onBack}>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M10 6.5H3M6.5 3l-4 3.5 4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                Back
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

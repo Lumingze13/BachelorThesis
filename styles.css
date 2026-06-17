@@ -241,6 +241,12 @@ input, textarea, select { font-family: inherit; color: inherit; font-size: 16px;
 .flow-foot .step-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; white-space: nowrap; }
 @media (max-width: 560px) { .flow-foot { padding: 12px 16px 22px; gap: 8px; } }
 
+/* Pause screens: a prominent Continue with a quiet, secondary "Back" beneath it
+   (back into the previous phase, guarded by a confirm where progress is lost). */
+.pause-actions { display: inline-flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 12px; }
+.btn.ghost.pause-back { color: var(--muted); border-color: transparent; }
+.btn.ghost.pause-back:hover { color: var(--ink); background: var(--surface-2); opacity: 1; }
+
 /* ---------- Monogram avatar ---------- */
 .monogram {
   border-radius: 50%;
