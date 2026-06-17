@@ -409,3 +409,44 @@ confirmation.
 - Infra [ON MAIN]: Veo `durationSeconds` coerced to Number (Gemini rejected the
   string); `@google/genai` dependency added; `flow_test` stays green because the video
   step is off by default. (commits `5009ad0`, `5cb3b6c`)
+
+## Round 10 (2026-06-17) — measurement restructure + UI/stimulus cleanup (Kangzhi)
+
+Kangzhi's decisions after reviewing the 14–16 Jun changes; implemented on `main`.
+Status: **[ON MAIN]** present on the team `main` branch · **[VERIFY]** needs
+verbatim-wording confirmation before fielding. (commit `2f4beac`.)
+
+- **§10 Continuity (FSCS) RESTORED** [ON MAIN] — reverses Round 9's drop. The 2-item
+  pictorial FSCS pair (`fscs_similar` / `fscs_connected`, pre + post; continuity =
+  mean) is added back: it is the sole measure of the continuity mediator (H3) and of
+  what the biographical-grounding component targets, so the 14 Jun removal had left
+  continuity unmeasured. `scoreFSCS` + a dedicated circles page (pre and post);
+  results aggregation (`lib/results_routes.js`), admin CSV/descriptives, `analysis.py`,
+  and the silicon self-report battery (`lib/prompt.js`) all updated to match.
+- **§10 Distal outcome swapped — CDSE-SA + CIP-CCA → CIP-Short "Lack of Readiness"**
+  [ON MAIN] [VERIFY]: both former distal outcomes removed; replaced by the CIP-Short
+  LR subscale (`cip_lr_1..5`, 6-point, ALL reverse-scored → higher = more lack of
+  readiness), pre + post, single page. `scoreCipLR` is reverse-aware. Propagated to
+  `lib/prompt.js` (silicon self-report), `lib/results_routes.js`,
+  `lib/silicon_cohort.js`, `admin/index.html` (CSV + descriptives, reverse noted),
+  and `analysis.py`. **[VERIFY — wording]** items render the CIP-Short LR Table-4 stems
+  (Xu 2020); confirm verbatim against Xu & Tracey (2017b), J. Counseling Psychology 64,
+  222–232, before fielding. (Andrea's disabled `study=andrea` placeholder still names
+  her own CDSE-SF DV — left untouched; her instrument, not Kangzhi's outcome.)
+- **§7 / §10 Imagination page hold removed (skippable)** [ON MAIN] — reverses Round 9's
+  20-second gate. "Picture that future you" no longer forces a wait; Continue is enabled
+  immediately (the imagination text/fade stays).
+- **§7 Phase B career lock-in → separate full-screen page** [ON MAIN]: the lock-in
+  (career + location + familiarity/interest + model validity check) no longer renders
+  inline under the chat; it opens as a full-screen overlay (`.pb-lock-overlay` /
+  `.pb-lock-sheet`) with a "Back to chat" button — return to tap a suggested card or
+  type, then continue. UI only; no measurement change.
+- **§NEW "day in the life" video subsystem REMOVED** [ON MAIN] — reverses Round 9's
+  video addition. Deleted `dayinlife.jsx`, `lib/video.js`, the `/api/day-in-life*`
+  endpoints + import, `buildDayInLifeScenePrompt`, the `@google/genai` dependency (and
+  lockfile entry), the `app.jsx` / `index.html` wiring, and the `dil-*` CSS. Pause B→C
+  now goes straight to the role-play; the fielded flow has no pre-chat video exposure.
+- Plumbing: pre/post page set changed → survey storage key bumped to `thesis_svpage_v3`;
+  scoring exports now `scoreCipLR` + `scoreFSCS` (CDSE/CIP removed); `app.jsx` score
+  payloads carry `cipLR_pre/post`; `flow_test` drops `dayinlife.jsx`. `npm test`
+  (flow / recs / reconstruct) green.

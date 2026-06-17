@@ -306,3 +306,53 @@ arms — §1.3 unchanged in substance).
 
 *Provenance: all by Gleb Meshkov (`SkullCandby`, gdmeshkov@gmail.com), 2026-06-16,
 commits `635dd77`, `5cb3b6c`, `5009ad0`, `29c6164`, `c24802e`.*
+
+## 7. Measurement restructure (2026-06-17, Kangzhi) — supersedes parts of §6
+
+Kangzhi's decisions after reviewing §6. Implemented on `main` (commit `2f4beac`).
+
+### 7.1 Continuity (FSCS) restored — resolves the §6.1 flag
+
+The 2-item pictorial FSCS continuity measure is reinstated (pre + post; continuity =
+mean of similarity + connectedness). Continuity is one of the three mediators (H3) and
+the channel the biographical-grounding component targets; its 14 Jun removal is
+reversed. The three mediators are again each measured: closeness (IOS, 1 item),
+continuity (FSCS, 2 items), vividness (4 items).
+
+### 7.2 Distal outcome changed — now CIP-Short "Lack of Readiness" only [VERIFY]
+
+The two former distal outcomes — CDSE-SA (career decision self-efficacy) and CIP-CCA
+(choice/commitment anxiety) — are removed. The single distal outcome is now the
+**CIP-Short Lack of Readiness** subscale (5 items, 6-point, reverse-scored; higher =
+more lack of readiness), pre + post. Method consequences to fold into Brief v4.2:
+update §2.5 (measures), §2.6 (H4/H5 now concern lack of readiness, not self-efficacy /
+choice anxiety), §4.1 (analysis), and Appendix F. **[VERIFY]** the verbatim item
+wording against Xu & Tracey (2017b), J. Counseling Psychology 64, 222–232, before
+fielding — the uploaded CIP-Short paper (Xu 2020) gives only abbreviated Table-4 stems,
+which the app renders as full items pending confirmation. (Andrea's reserved, disabled
+post-survey placeholder still names her own CDSE-SF DV — left untouched.)
+
+### 7.3 Imagination hold removed (skippable) — supersedes §6.2
+
+The 20-second forced hold before the closeness measure is removed; the "Picture that
+future you" page is now skippable (the imagination prompt itself remains, optional). No
+forced pre-measure reactivity.
+
+### 7.4 "Day in the life" video removed — supersedes §6.3
+
+The optional Phase B→C video stimulus is deleted entirely. There is no pre-chat video
+exposure between phases, so the protocol-change / confound concern raised in §6.3 is
+moot.
+
+### 7.5 Phase B lock-in UX (no measurement change)
+
+The career lock-in is now a separate full-screen page with a "back to chat" button
+rather than an inline panel under the conversation. Participant-experience only.
+
+### 3 (amended) — measurement battery as of 2026-06-17
+
+The instrument list is now: TIPI-10, O*NET Work Values, RIASEC, **IOS (closeness)**,
+**FSCS-2 (continuity, restored)**, **vividness ×4**, manipulation checks ×3,
+open-ended ×2, and **CIP-Short Lack of Readiness (distal outcome, replaces CDSE-SA +
+CIP-CCA)**. CIP-CCA placeholders and the CDSE-SA verification task in §6/earlier are no
+longer applicable.
