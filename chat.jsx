@@ -472,7 +472,8 @@ function Chat({ profile, condition = 'main', profileData = {}, phaseBNotes = '',
               <button className="btn ghost sm" onClick={onSwitchCareer} title="Pick a different career to step into">Other careers</button>
             )}
             <button className="btn accent sm" onClick={finish} title={isExplore ? 'Wrap up this future' : 'Move on to the reflection'}>
-              {isExplore ? 'Done with this future' : 'Finish & reflect'}
+              <span className="lbl-full">{isExplore ? 'Done with this future' : 'Finish & reflect'}</span>
+              <span className="lbl-short">{isExplore ? 'Done' : 'Finish'}</span>
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 6.5h7M6.5 3l4 3.5-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
