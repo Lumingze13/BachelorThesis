@@ -43,9 +43,9 @@
   --shadow-pop: 0 16px 50px -18px rgba(0,0,0,.6);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 #how, #about { scroll-margin-top: 84px; }
 body {
   margin: 0;
@@ -53,13 +53,27 @@ body {
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-size: 15px;
   line-height: 1.55;
+  accent-color: var(--accent); /* brand-tinted native checkboxes / radios */
 }
 
+::selection { background: var(--accent-soft); color: var(--accent-ink); }
+
 button { font-family: inherit; cursor: pointer; }
-input, textarea { font-family: inherit; color: inherit; }
+/* Form controls inherit the type, and sit at 16px so iOS Safari never
+   zooms the page when a field is focused. */
+input, textarea, select { font-family: inherit; color: inherit; font-size: 16px; }
+
+/* Quiet keyboard-only focus ring (never shown for mouse / touch). :where()
+   keeps specificity at 0 so component styles still win where they set their own. */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 
 .serif { font-family: var(--font-serif); font-weight: 400; letter-spacing: -0.01em; }
 .mono { font-family: var(--font-mono); }
@@ -69,7 +83,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ---------- Top nav ---------- */
 .topnav {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 28px;
+  padding: 20px max(28px, env(safe-area-inset-right)) 20px max(28px, env(safe-area-inset-left));
   max-width: 1120px; margin: 0 auto; width: 100%;
 }
 .topnav .brand { display: flex; align-items: center; gap: 9px; font-weight: 500; font-size: 15px; letter-spacing: -0.01em; }
@@ -253,7 +267,7 @@ input, textarea { font-family: inherit; color: inherit; }
 .field-label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
 .text-input {
   width: 100%; background: var(--surface); border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md); padding: 12px 14px; font-size: 15px; color: var(--ink);
+  border-radius: var(--radius-md); padding: 12px 14px; font-size: 16px; color: var(--ink);
   transition: border-color .15s ease;
 }
 .text-input:focus { outline: none; border-color: var(--ink-2); }
@@ -354,7 +368,7 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 .chip .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2.4s infinite; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--accent) 45%, transparent); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 
-.chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 30px 24px 14px; }
+.chat-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding: 30px 24px 14px; }
 .chat-thread { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
 
 .msg { display: flex; gap: 14px; align-items: flex-start; }
@@ -421,7 +435,8 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
   .ask-chip { font-size: 13px; padding: 9px 12px; line-height: 1.45; }
 }
 
-.composer-wrap { padding: 10px 24px 22px; }
+/* Keep the input clear of the home indicator, and of the notch in landscape. */
+.composer-wrap { padding: 10px max(24px, env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
 .composer {
   max-width: 720px; margin: 0 auto; background: var(--surface);
   border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
@@ -429,7 +444,7 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
   box-shadow: var(--shadow-card); transition: border-color .15s ease;
 }
 .composer:focus-within { border-color: var(--ink-2); }
-.composer textarea { flex: 1; resize: none; background: transparent; border: 0; outline: 0; font-size: 15.5px; line-height: 1.5; padding: 10px 0; max-height: 200px; color: var(--ink); }
+.composer textarea { flex: 1; resize: none; background: transparent; border: 0; outline: 0; font-size: 16px; line-height: 1.5; padding: 10px 0; max-height: 200px; color: var(--ink); }
 .composer .send { width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--bg); border: 0; display: inline-flex; align-items: center; justify-content: center; transition: opacity .15s ease; flex: none; }
 .composer .send:disabled { opacity: .25; }
 .composer-foot { text-align: center; margin-top: 9px; font-size: 11.5px; color: var(--muted); }
@@ -469,7 +484,7 @@ textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.55; }
 .sv-input, .sv-textarea {
   width: 100%; background: var(--surface); color: var(--ink);
   border: 1px solid var(--border); border-radius: var(--radius-md);
-  padding: 11px 13px; font: inherit; font-size: 15px; outline: none;
+  padding: 11px 13px; font: inherit; font-size: 16px; outline: none;
 }
 .sv-input:focus, .sv-textarea:focus { border-color: var(--accent); }
 .sv-textarea { resize: vertical; min-height: 64px; }
@@ -626,7 +641,7 @@ html[data-motion="reduced"] *::after {
 }
 
 .comfort-fab {
-  position: fixed; right: 18px; bottom: 18px; z-index: 62; /* above the panel so it always closes it */
+  position: fixed; right: calc(18px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 62; /* above the panel so it always closes it */
   width: 44px; height: 44px; border-radius: 999px;
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink);
   box-shadow: var(--shadow-pop); cursor: pointer; font-size: 16px; font-weight: 600;
@@ -671,7 +686,7 @@ html[data-font="serif"] .hero-sub { font-family: var(--font-serif); }
 
 /* Persistent restart chrome (§0) — quiet, bottom-left, away from the comfort fab. */
 .restart-fab {
-  position: fixed; left: 18px; bottom: 18px; z-index: 60;
+  position: fixed; left: calc(18px + env(safe-area-inset-left)); bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 60;
   padding: 8px 14px; border-radius: 999px; font-size: 12.5px;
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--muted);
   box-shadow: var(--shadow-card); cursor: pointer;

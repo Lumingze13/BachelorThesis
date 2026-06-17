@@ -127,6 +127,14 @@ function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = tweaks.theme;
+    // Keep the mobile browser chrome in sync with the *active* theme (the static
+    // <meta theme-color> only tracks the system preference, not a manual toggle).
+    try {
+      let m = document.getElementById('theme-color-live');
+      if (!m) { m = document.createElement('meta'); m.id = 'theme-color-live'; m.name = 'theme-color'; document.head.appendChild(m); }
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      m.setAttribute('content', bg || (tweaks.theme === 'dark' ? '#1a1a19' : '#ffffff'));
+    } catch (e) { /* non-blocking */ }
     document.documentElement.style.setProperty('--accent', tweaks.accent);
     document.documentElement.style.setProperty('--accent-soft',
       tweaks.theme === 'dark' ? shadeMix(tweaks.accent, 0.78, 30) : tintFromAccent(tweaks.accent));

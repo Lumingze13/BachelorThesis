@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <!-- viewport-fit=cover lets the layout reach under the notch / home indicator,
+       so safe-area-inset-* padding can keep content clear of them. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <!-- Match the mobile browser chrome to the app surface (light + dark). -->
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"/>
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)"/>
+  <meta name="color-scheme" content="light dark"/>
   <title>Thesis — Future Self chatbot</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
