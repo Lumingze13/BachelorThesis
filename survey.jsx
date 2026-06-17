@@ -374,7 +374,7 @@ function buildPreSections(answers, onChange) {
       // immediately before the future-self mediator block. Non-blocking: offers
       // both Continue and Skip; nothing here is recorded as an outcome.
       title: 'Picture that future you',
-      intro: 'Take a moment for this one — there is nothing to answer here, just a minute to imagine.',
+      intro: 'The next questions are about your future self — the person you will be about 10 years from now. Take a moment for this one — there is nothing to answer here, just a minute to imagine.',
       ids: [],
       skip: true,
       node: (
