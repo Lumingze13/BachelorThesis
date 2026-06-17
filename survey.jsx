@@ -499,22 +499,6 @@ function buildPostSections(answers, onChange, career, study = 'kangzhi') {
         </div>
       ),
     },
-    // Andrea's DV battery — labelled placeholder, only for study=andrea (Build
-    // Plan §10.2). Ships disabled until her CDSE-SF + agency/closeness items are
-    // confirmed; routing already supports her conditions.
-    ...(study === 'andrea' ? [{
-      title: 'A few more questions',
-      intro: 'About how you feel about choosing your path.',
-      ids: [],
-      node: (
-        <div className="sv-section">
-          <p className="sv-hint">
-            (Reserved for Andrea's dependent-variable battery — career-decision self-efficacy
-            (CDSE-SF) and agency/closeness. Disabled in this build until the items are confirmed.)
-          </p>
-        </div>
-      ),
-    }] : []),
     {
       title: 'One last thing',
       intro: 'Optional.',
