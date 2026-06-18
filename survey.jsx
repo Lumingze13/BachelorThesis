@@ -105,20 +105,26 @@ const OPEN_ENDED = [
   { id: 'oe_broke', text: 'Was there any moment that broke the feeling — that made the future self feel fake, generic, or off? What happened?' },
 ];
 
-// Distal outcome — Career indecision: CIP-Short "Lack of Readiness" (LR) subscale
-// (Xu & Tracey, 2017b). 5 items, ALL reverse-scored on the original 6-point agreement
-// scale; after reversing, higher = greater lack of readiness. Pre AND post; NOT fed to
-// the AI. The single shared career-level distal outcome for Kangzhi (main vs baseline)
-// and Andrea (reflective vs direct); doubles as the open-access proxy for career
-// decision self-efficacy (Build Plan v5.3 §10.1(i)). Item 5 verbatim from Xu & Tracey
-// (2017b); items 1–4 reconstructed from the published descriptions (Brown et al., 2012;
-// Hacker et al., 2013). [pending — optional] confirm the verbatim stems with Hui Xu.
-const CIP_LR_ITEMS = [
-  { id: 'cip_lr_1', text: 'I am confident I will be able to overcome obstacles.', reverse: true },
-  { id: 'cip_lr_2', text: 'I try to excel at everything.', reverse: true },
-  { id: 'cip_lr_3', text: 'I will be able to find a career that fits my interests.', reverse: true },
-  { id: 'cip_lr_4', text: 'I work productively to get the job done.', reverse: true },
-  { id: 'cip_lr_5', text: "I am quite confident that I will be able to find a career in which I'll perform well.", reverse: true },
+// Distal outcomes — CIP-Short, supervisor spec (CIP_outcome_measures, 2026-06):
+// SIX items, two outcomes of three, on the original 6-point agreement scale
+// (1 = completely disagree … 6 = strongly agree). Both scored FORWARD as raw
+// means (NO reverse-keying):
+//   A. Commitment anxiety (career indecision) — higher = more indecision.
+//   B. Career decision self-efficacy (confidence) — higher = more confident
+//      (these items are reverse-keyed in the original CIP; used here as
+//      self-efficacy they are scored forward per the supervisor doc).
+// Shown in a fixed MIXED order (not grouped by outcome), pre AND post; NEVER fed
+// to the AI. Wordings per the supervisor doc (Hacker et al., 2013; loadings
+// Xu, 2020). Replaces the interim single Lack-of-Readiness subscale.
+const CIP_ANXIETY_IDS = ['cip_ca_1', 'cip_ca_2', 'cip_ca_3'];
+const CIP_CONFIDENCE_IDS = ['cip_cf_1', 'cip_cf_2', 'cip_cf_3'];
+const CIP_ITEMS = [
+  { id: 'cip_cf_1', text: 'I am confident that I will be able to find a career.' },
+  { id: 'cip_ca_1', text: "I can't commit to a career because I don't know what my other options are." },
+  { id: 'cip_cf_3', text: 'I am confident that I can overcome obstacles in pursuing my career.' },
+  { id: 'cip_ca_2', text: 'I am concerned that my career goals might change.' },
+  { id: 'cip_cf_2', text: "I am quite confident that I will be able to find a career in which I'll perform well." },
+  { id: 'cip_ca_3', text: 'It is difficult to decide on a career because I like so many different things.' },
 ];
 const CIP_SCALE = { points: 6, left: 'Completely disagree', right: 'Strongly agree' };
 
@@ -421,10 +427,10 @@ function buildPreSections(answers, onChange) {
     {
       title: 'Your career decision',
       intro: "Where you stand with career decisions right now — you'll answer these again after the conversation. How much do you agree with each?",
-      ids: CIP_LR_ITEMS.map((i) => i.id),
+      ids: CIP_ITEMS.map((i) => i.id),
       node: (
         <div className="sv-section">
-          <LikertGrid items={CIP_LR_ITEMS} scale={CIP_SCALE} answers={answers} onChange={set} />
+          <LikertGrid items={CIP_ITEMS} scale={CIP_SCALE} answers={answers} onChange={set} />
         </div>
       ),
     },
@@ -468,10 +474,10 @@ function buildPostSections(answers, onChange, career) {
     {
       title: 'Your career decision, now',
       intro: 'The same statements as before — answer for how you feel right now.',
-      ids: CIP_LR_ITEMS.map((i) => i.id + '_post'),
+      ids: CIP_ITEMS.map((i) => i.id + '_post'),
       node: (
         <div className="sv-section">
-          <LikertGrid items={CIP_LR_ITEMS.map((i) => ({ ...i, id: i.id + '_post' }))}
+          <LikertGrid items={CIP_ITEMS.map((i) => ({ ...i, id: i.id + '_post' }))}
             scale={CIP_SCALE} answers={answers} onChange={set} />
         </div>
       ),
@@ -661,16 +667,17 @@ function scaleMean(a, items, suffix = '') {
 }
 // Continuity (FSCS) = mean of the two pictorial items, 1–7 (no reverse).
 const scoreFSCS = (a, suffix = '') => scaleMean(a, FSCS, suffix);
-// CIP-Short Lack of Readiness = mean of the five items, each reverse-scored on the
-// 6-point scale (7 − raw), so higher = more lack of readiness. 1–6.
-function scoreCipLR(a, suffix = '') {
-  const vals = CIP_LR_ITEMS.map((it) => {
-    const raw = Number(a[it.id + suffix]);
-    return Number.isNaN(raw) ? NaN : (it.reverse ? 7 - raw : raw);
-  }).filter((v) => !Number.isNaN(v));
-  return vals.length === CIP_LR_ITEMS.length
-    ? Math.round((vals.reduce((s, v) => s + v, 0) / vals.length) * 100) / 100
-    : null;
+// CIP outcomes (1–6, forward raw means; NO reverse-keying). Returns both
+// sub-scores: anxiety = career indecision (higher = more), confidence = career
+// decision self-efficacy (higher = more). Each is null until all 3 are answered.
+function scoreCip(a, suffix = '') {
+  const m = (ids) => {
+    const v = ids.map((id) => Number(a[id + suffix])).filter((x) => !Number.isNaN(x));
+    return v.length === ids.length
+      ? Math.round((v.reduce((s, x) => s + x, 0) / v.length) * 100) / 100
+      : null;
+  };
+  return { anxiety: m(CIP_ANXIETY_IDS), confidence: m(CIP_CONFIDENCE_IDS) };
 }
 function scoreRiasec(a) {
   const out = {};
@@ -703,5 +710,5 @@ function buildProfileData(pre) {
 Object.assign(window, {
   ScaleRow, LikertGrid, CirclesField, IOSField, ChoiceField, MultiField,
   PreSurvey, PostSurvey, buildProfileData, scoreBigFive, scoreRiasec,
-  scoreCipLR, scoreFSCS,
+  scoreCip, scoreFSCS,
 });

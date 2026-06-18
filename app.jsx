@@ -367,7 +367,7 @@ function App() {
               // AI profile (Build Plan §10.1i/j: not fed to the model).
               scores: {
                 bigFive: baseProfile.bigFive, riasec: baseProfile.riasec, values: baseProfile.values,
-                cipLR_pre: scoreCipLR(preAnswers),
+                cip_pre: scoreCip(preAnswers),
               },
             });
             setScreen('pause_ab');
@@ -446,7 +446,7 @@ function App() {
               postSurvey: postAnswers,
               scores: {
                 bigFive: baseProfile.bigFive, riasec: baseProfile.riasec, values: baseProfile.values,
-                cipLR_pre: scoreCipLR(preAnswers), cipLR_post: scoreCipLR(postAnswers, '_post'),
+                cip_pre: scoreCip(preAnswers), cip_post: scoreCip(postAnswers, '_post'),
               },
               version: '3.1', finalize: true,
             });
@@ -527,7 +527,7 @@ function App() {
             preSurvey: preAnswers,
             scores: {
               bigFive: baseProfile.bigFive, riasec: baseProfile.riasec, values: baseProfile.values,
-              cipLR_pre: scoreCipLR(preAnswers), cipLR_post: scoreCipLR(postAnswers, '_post'),
+              cip_pre: scoreCip(preAnswers), cip_post: scoreCip(postAnswers, '_post'),
             },
             phaseB,
             phaseC,

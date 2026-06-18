@@ -448,7 +448,7 @@ function App() {
           bigFive: baseProfile.bigFive,
           riasec: baseProfile.riasec,
           values: baseProfile.values,
-          cipLR_pre: scoreCipLR(preAnswers)
+          cip_pre: scoreCip(preAnswers)
         }
       });
       setScreen('pause_ab');
@@ -529,8 +529,8 @@ function App() {
           bigFive: baseProfile.bigFive,
           riasec: baseProfile.riasec,
           values: baseProfile.values,
-          cipLR_pre: scoreCipLR(preAnswers),
-          cipLR_post: scoreCipLR(postAnswers, '_post')
+          cip_pre: scoreCip(preAnswers),
+          cip_post: scoreCip(postAnswers, '_post')
         },
         version: '3.1',
         finalize: true
@@ -667,8 +667,8 @@ function App() {
         bigFive: baseProfile.bigFive,
         riasec: baseProfile.riasec,
         values: baseProfile.values,
-        cipLR_pre: scoreCipLR(preAnswers),
-        cipLR_post: scoreCipLR(postAnswers, '_post')
+        cip_pre: scoreCip(preAnswers),
+        cip_post: scoreCip(postAnswers, '_post')
       },
       phaseB,
       phaseC,

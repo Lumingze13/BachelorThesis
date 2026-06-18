@@ -193,18 +193,13 @@ const CSV_MEAN = (o, ids) => {
   const v = ids.map((i) => Number(o && o[i])).filter((x) => !Number.isNaN(x));
   return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : '';
 };
-// CIP-Short Lack of Readiness: ALL items reverse-scored (7 − raw) before averaging
-// (native 1–6; reverse-scored mean stays on the /6 frame).
-const CSV_LR_MEAN = (o, ids) => {
-  const v = ids.map((i) => Number(o && o[i])).filter((x) => !Number.isNaN(x)).map((x) => 7 - x);
-  return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : '';
-};
+// CIP outcomes (1–6) are forward means — CSV_MEAN handles both, no reverse-keying.
 function studiesToCsv(studies) {
   const cols = ['session_id', 'pid', 'study', 'rec', 'cond', 'status', 'created_at', 'completed_at',
     'career', 'location', 'familiarity', 'interest_strength', 'c_duration_sec', 'c_turns',
     'c_ended_by', 'free_turns', 'ios_pre', 'ios_post', 'fscs_pre_mean', 'fscs_post_mean',
     'viv_pre_mean', 'viv_post_mean',
-    'cip_lr_pre_mean', 'cip_lr_post_mean',
+    'cip_anxiety_pre_mean', 'cip_confidence_pre_mean', 'cip_anxiety_post_mean', 'cip_confidence_post_mean',
     'mc_style', 'mc_scene', 'mc_understand'];
   const esc = (x) => { const s = x == null ? '' : String(x); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const rows = studies.map((s) => {
@@ -217,8 +212,8 @@ function studiesToCsv(studies) {
       CSV_MEAN(pre, ['fscs_similar', 'fscs_connected']), CSV_MEAN(post, ['fscs_similar_post', 'fscs_connected_post']),
       CSV_MEAN(pre, ['viv_clear', 'viv_tangible', 'viv_detail', 'viv_felt']),
       CSV_MEAN(post, ['viv_clear_post', 'viv_tangible_post', 'viv_detail_post', 'viv_felt_post']),
-      CSV_LR_MEAN(pre, ['cip_lr_1', 'cip_lr_2', 'cip_lr_3', 'cip_lr_4', 'cip_lr_5']),
-      CSV_LR_MEAN(post, ['cip_lr_1_post', 'cip_lr_2_post', 'cip_lr_3_post', 'cip_lr_4_post', 'cip_lr_5_post']),
+      CSV_MEAN(pre, ['cip_ca_1', 'cip_ca_2', 'cip_ca_3']), CSV_MEAN(pre, ['cip_cf_1', 'cip_cf_2', 'cip_cf_3']),
+      CSV_MEAN(post, ['cip_ca_1_post', 'cip_ca_2_post', 'cip_ca_3_post']), CSV_MEAN(post, ['cip_cf_1_post', 'cip_cf_2_post', 'cip_cf_3_post']),
       post.mc_style, post.mc_scene, post.mc_understand].map(esc).join(',');
   });
   return cols.join(',') + '\n' + rows.join('\n') + '\n';
@@ -760,9 +755,6 @@ function DescriptivesView() {
   const f2 = (x) => (x == null ? '—' : x.toFixed(2));
   const d2 = (a, b) => (a == null || b == null ? '—' : (b - a >= 0 ? '+' : '') + (b - a).toFixed(2));
   const perPerson = (objs, ids) => objs.map((o) => m(ids.map((id) => o[id]))).filter((x) => x != null);
-  // CIP-LR: all items reverse-scored (7 − raw) before the per-person mean (/6 frame).
-  const mLR = (xs) => { const v = xs.map(Number).filter((x) => !Number.isNaN(x)).map((x) => 7 - x); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
-  const perPersonLR = (objs, ids) => objs.map((o) => mLR(ids.map((id) => o[id]))).filter((x) => x != null);
   const groups = {};
   for (const s of studies) { const c = (s.meta && s.meta.condition) || 'main'; (groups[c] = groups[c] || []).push(s); }
   const stat = (list) => {
@@ -775,17 +767,19 @@ function DescriptivesView() {
       fPost: m(perPerson(post, ['fscs_similar_post', 'fscs_connected_post'])),
       vPre: m(perPerson(pre, ['viv_clear', 'viv_tangible', 'viv_detail', 'viv_felt'])),
       vPost: m(perPerson(post, ['viv_clear_post', 'viv_tangible_post', 'viv_detail_post', 'viv_felt_post'])),
-      // Distal outcome — CIP-Short Lack of Readiness, reverse-scored mean (/6).
-      lrPre: m(perPersonLR(pre, ['cip_lr_1', 'cip_lr_2', 'cip_lr_3', 'cip_lr_4', 'cip_lr_5'])),
-      lrPost: m(perPersonLR(post, ['cip_lr_1_post', 'cip_lr_2_post', 'cip_lr_3_post', 'cip_lr_4_post', 'cip_lr_5_post'])),
+      // Distal outcomes — CIP-Short, forward means (/6): commitment anxiety + confidence.
+      caPre: m(perPerson(pre, ['cip_ca_1', 'cip_ca_2', 'cip_ca_3'])),
+      caPost: m(perPerson(post, ['cip_ca_1_post', 'cip_ca_2_post', 'cip_ca_3_post'])),
+      cfPre: m(perPerson(pre, ['cip_cf_1', 'cip_cf_2', 'cip_cf_3'])),
+      cfPost: m(perPerson(post, ['cip_cf_1_post', 'cip_cf_2_post', 'cip_cf_3_post'])),
     };
   };
   const conds = Object.keys(groups).sort();
   return (
     <div>
-      <div className="note">Live per-condition descriptives (Build Plan §14). Means over stored responses; Δ = post − pre. CIP-LR is the CIP-Short Lack of Readiness subscale, <b>reverse-scored</b> (mean of 7 − raw, /6) — higher = MORE ready. Descriptive only — t-test / ANCOVA / Cronbach's α are phase 2 (run <b>analysis.py</b> on the exported data).</div>
+      <div className="note">Live per-condition descriptives (Build Plan §14). Means over stored responses; Δ = post − pre. The two CIP-Short distal outcomes are <b>forward-scored</b> (/6): commitment anxiety (higher = more career indecision) and confidence (career decision self-efficacy; higher = more confident). Descriptive only — t-test / ANCOVA / Cronbach's α are phase 2 (run <b>analysis.py</b> on the exported data).</div>
       <table>
-        <thead><tr><th>Condition</th><th>N</th><th>Completed</th><th>IOS pre → post (Δ) /7</th><th>FSCS pre → post (Δ) /7</th><th>Vividness pre → post (Δ) /7</th><th>CIP-LR (lack of readiness, rev) pre → post (Δ) /6</th></tr></thead>
+        <thead><tr><th>Condition</th><th>N</th><th>Completed</th><th>IOS pre → post (Δ) /7</th><th>FSCS pre → post (Δ) /7</th><th>Vividness pre → post (Δ) /7</th><th>CIP anxiety pre → post (Δ) /6</th><th>CIP confidence pre → post (Δ) /6</th></tr></thead>
         <tbody>
           {conds.map((c) => { const s = stat(groups[c]); return (
             <tr key={c}>
@@ -793,10 +787,11 @@ function DescriptivesView() {
               <td>{f2(s.iosPre)} → {f2(s.iosPost)} <span className="muted">({d2(s.iosPre, s.iosPost)})</span></td>
               <td>{f2(s.fPre)} → {f2(s.fPost)} <span className="muted">({d2(s.fPre, s.fPost)})</span></td>
               <td>{f2(s.vPre)} → {f2(s.vPost)} <span className="muted">({d2(s.vPre, s.vPost)})</span></td>
-              <td>{f2(s.lrPre)} → {f2(s.lrPost)} <span className="muted">({d2(s.lrPre, s.lrPost)})</span></td>
+              <td>{f2(s.caPre)} → {f2(s.caPost)} <span className="muted">({d2(s.caPre, s.caPost)})</span></td>
+              <td>{f2(s.cfPre)} → {f2(s.cfPost)} <span className="muted">({d2(s.cfPre, s.cfPost)})</span></td>
             </tr>
           ); })}
-          {!conds.length && <tr><td colSpan="7" className="muted">No sessions yet.</td></tr>}
+          {!conds.length && <tr><td colSpan="8" className="muted">No sessions yet.</td></tr>}
         </tbody>
       </table>
     </div>

@@ -162,26 +162,26 @@ const OPEN_ENDED = [{
   id: 'oe_broke',
   text: 'Was there any moment that broke the feeling — that made the future self feel fake, generic, or off? What happened?'
 }];
-const CIP_LR_ITEMS = [{
-  id: 'cip_lr_1',
-  text: 'I am confident I will be able to overcome obstacles.',
-  reverse: true
+const CIP_ANXIETY_IDS = ['cip_ca_1', 'cip_ca_2', 'cip_ca_3'];
+const CIP_CONFIDENCE_IDS = ['cip_cf_1', 'cip_cf_2', 'cip_cf_3'];
+const CIP_ITEMS = [{
+  id: 'cip_cf_1',
+  text: 'I am confident that I will be able to find a career.'
 }, {
-  id: 'cip_lr_2',
-  text: 'I try to excel at everything.',
-  reverse: true
+  id: 'cip_ca_1',
+  text: "I can't commit to a career because I don't know what my other options are."
 }, {
-  id: 'cip_lr_3',
-  text: 'I will be able to find a career that fits my interests.',
-  reverse: true
+  id: 'cip_cf_3',
+  text: 'I am confident that I can overcome obstacles in pursuing my career.'
 }, {
-  id: 'cip_lr_4',
-  text: 'I work productively to get the job done.',
-  reverse: true
+  id: 'cip_ca_2',
+  text: 'I am concerned that my career goals might change.'
 }, {
-  id: 'cip_lr_5',
-  text: "I am quite confident that I will be able to find a career in which I'll perform well.",
-  reverse: true
+  id: 'cip_cf_2',
+  text: "I am quite confident that I will be able to find a career in which I'll perform well."
+}, {
+  id: 'cip_ca_3',
+  text: 'It is difficult to decide on a career because I like so many different things.'
 }];
 const CIP_SCALE = {
   points: 6,
@@ -544,11 +544,11 @@ function buildPreSections(answers, onChange) {
   }, {
     title: 'Your career decision',
     intro: "Where you stand with career decisions right now — you'll answer these again after the conversation. How much do you agree with each?",
-    ids: CIP_LR_ITEMS.map(i => i.id),
+    ids: CIP_ITEMS.map(i => i.id),
     node: React.createElement("div", {
       className: "sv-section"
     }, React.createElement(LikertGrid, {
-      items: CIP_LR_ITEMS,
+      items: CIP_ITEMS,
       scale: CIP_SCALE,
       answers: answers,
       onChange: set
@@ -600,11 +600,11 @@ function buildPostSections(answers, onChange, career) {
   }, {
     title: 'Your career decision, now',
     intro: 'The same statements as before — answer for how you feel right now.',
-    ids: CIP_LR_ITEMS.map(i => i.id + '_post'),
+    ids: CIP_ITEMS.map(i => i.id + '_post'),
     node: React.createElement("div", {
       className: "sv-section"
     }, React.createElement(LikertGrid, {
-      items: CIP_LR_ITEMS.map(i => ({
+      items: CIP_ITEMS.map(i => ({
         ...i,
         id: i.id + '_post'
       })),
@@ -855,12 +855,15 @@ function scaleMean(a, items, suffix = '') {
   return vals.length === items.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length * 100) / 100 : null;
 }
 const scoreFSCS = (a, suffix = '') => scaleMean(a, FSCS, suffix);
-function scoreCipLR(a, suffix = '') {
-  const vals = CIP_LR_ITEMS.map(it => {
-    const raw = Number(a[it.id + suffix]);
-    return Number.isNaN(raw) ? NaN : it.reverse ? 7 - raw : raw;
-  }).filter(v => !Number.isNaN(v));
-  return vals.length === CIP_LR_ITEMS.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length * 100) / 100 : null;
+function scoreCip(a, suffix = '') {
+  const m = ids => {
+    const v = ids.map(id => Number(a[id + suffix])).filter(x => !Number.isNaN(x));
+    return v.length === ids.length ? Math.round(v.reduce((s, x) => s + x, 0) / v.length * 100) / 100 : null;
+  };
+  return {
+    anxiety: m(CIP_ANXIETY_IDS),
+    confidence: m(CIP_CONFIDENCE_IDS)
+  };
 }
 function scoreRiasec(a) {
   const out = {};
@@ -905,7 +908,7 @@ Object.assign(window, {
   buildProfileData,
   scoreBigFive,
   scoreRiasec,
-  scoreCipLR,
+  scoreCip,
   scoreFSCS
 });
 })();

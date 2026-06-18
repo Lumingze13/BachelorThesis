@@ -31,11 +31,14 @@ VIV_PRE = ["viv_clear", "viv_tangible", "viv_detail", "viv_felt"]
 VIV_POST = [i + "_post" for i in VIV_PRE]
 MANIP = ["mc_style", "mc_scene", "mc_understand"]
 
-# Distal outcome (Build Plan §10.1i/j): CIP-Short Lack of Readiness subscale
-# (cip_lr_1..5, 1-6). ALL FIVE ITEMS ARE REVERSE-SCORED — the subscale score is
-# the mean of (7 - raw), so higher = MORE ready (less lack of readiness).
-CIP_LR_PRE = [f"cip_lr_{i}" for i in range(1, 6)]
-CIP_LR_POST = [i + "_post" for i in CIP_LR_PRE]
+# Distal outcomes (CIP-Short, supervisor spec): two 3-item scores on the 1-6
+# agreement frame, both scored FORWARD (raw means, no reverse-keying):
+#   cip_anxiety    = commitment anxiety / career indecision (higher = more indecision)
+#   cip_confidence = career decision self-efficacy (higher = more confident)
+CIP_ANX_PRE = [f"cip_ca_{i}" for i in range(1, 4)]
+CIP_ANX_POST = [i + "_post" for i in CIP_ANX_PRE]
+CIP_CONF_PRE = [f"cip_cf_{i}" for i in range(1, 4)]
+CIP_CONF_POST = [i + "_post" for i in CIP_CONF_PRE]
 
 # TIPI (Gosling et al., 2003) — mirror of the app scoring (Build Plan §9):
 # reversed = 8 - raw; trait = mean of its two items, natively /7; ES not N.
@@ -72,7 +75,7 @@ def _mean(xs):
 def _scale_mean(resp, ids, reverse_max=None):
     """Mean of a scale's items within ONE response (None if all missing).
     If reverse_max is given, each item is reverse-scored as (reverse_max + 1 - raw)
-    before averaging (CIP-LR is reverse-scored on its 1-6 frame: 7 - raw)."""
+    before averaging (kept for any reverse-keyed scale; the CIP outcomes are forward)."""
     vals = [v for v in (_num(resp.get(i)) for i in ids) if v is not None]
     if reverse_max is not None:
         vals = [(reverse_max + 1) - v for v in vals]
@@ -97,7 +100,7 @@ def _by_condition(studies):
 
 def _outcome_series(group, pre_ids, post_ids, ios=False, reverse_max=None):
     """Return (pre[], post[], change[]) of per-person scale means.
-    reverse_max reverse-scores each item (reverse_max+1-raw) — used for CIP-LR."""
+    reverse_max reverse-scores each item (reverse_max+1-raw) when a scale needs it."""
     pre, post, change = [], [], []
     for s in group:
         P, Q = s.get("preSurvey") or {}, s.get("postSurvey") or {}
@@ -152,7 +155,8 @@ def descriptives(studies):
             ("ios", None, None, True, None),
             ("fscs", FSCS_PRE, FSCS_POST, False, None),
             ("vividness", VIV_PRE, VIV_POST, False, None),
-            ("cip_lr", CIP_LR_PRE, CIP_LR_POST, False, 6),  # distal outcome, 1-6, reverse-scored (mean of 7-raw)
+            ("cip_anxiety", CIP_ANX_PRE, CIP_ANX_POST, False, None),    # distal A (forward, 1-6)
+            ("cip_confidence", CIP_CONF_PRE, CIP_CONF_POST, False, None),  # distal B (forward, 1-6)
         ]:
             pre, post, change = _outcome_series(group, pre_ids, post_ids, ios, rev)
             row[name] = {
@@ -177,7 +181,8 @@ def effect_sizes(studies):
         ("ios", None, None, True, None),
         ("fscs", FSCS_PRE, FSCS_POST, False, None),
         ("vividness", VIV_PRE, VIV_POST, False, None),
-        ("cip_lr", CIP_LR_PRE, CIP_LR_POST, False, 6),
+        ("cip_anxiety", CIP_ANX_PRE, CIP_ANX_POST, False, None),
+        ("cip_confidence", CIP_CONF_PRE, CIP_CONF_POST, False, None),
     ]:
         _, _, cm = _outcome_series(g["main"], pre_ids, post_ids, ios, rev)
         _, _, cb = _outcome_series(g["baseline"], pre_ids, post_ids, ios, rev)
@@ -209,10 +214,10 @@ def inter_item_r(group, ids):
 def reliability(studies):
     alls = [s for grp in _by_condition(studies).values() for s in grp]
     return {
-        # alpha only for multi-item Likert scales (vividness, CIP-LR). Cronbach's
-        # alpha is invariant to uniform reverse-scoring, so raw CIP-LR items are fine.
+        # alpha only for multi-item Likert scales (vividness + the two CIP scores).
         "vividness_pre_alpha": cronbach_alpha(alls, VIV_PRE),
-        "cip_lr_pre_alpha": cronbach_alpha(alls, CIP_LR_PRE),
+        "cip_anxiety_pre_alpha": cronbach_alpha(alls, CIP_ANX_PRE),
+        "cip_confidence_pre_alpha": cronbach_alpha(alls, CIP_CONF_PRE),
         # 2-item scales: report the inter-item correlation instead of alpha.
         "fscs_pre_inter_item_r": inter_item_r(alls, FSCS_PRE),
         # TIPI traits are 2-item by design; Gosling et al. (2003) argue reliability
@@ -251,7 +256,8 @@ def paired_prepost(studies):
         ("ios", None, None, True, None),
         ("fscs", FSCS_PRE, FSCS_POST, False, None),
         ("vividness", VIV_PRE, VIV_POST, False, None),
-        ("cip_lr", CIP_LR_PRE, CIP_LR_POST, False, 6),
+        ("cip_anxiety", CIP_ANX_PRE, CIP_ANX_POST, False, None),
+        ("cip_confidence", CIP_CONF_PRE, CIP_CONF_POST, False, None),
     ]:
         _, _, change = _outcome_series(alls, pre_ids, post_ids, ios, rev)
         n = len(change)
