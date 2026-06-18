@@ -2,7 +2,7 @@
 
 © 2026 the Thesis project authors, University of Amsterdam (UvA). All rights reserved.
 
-This repository is the artifact of an MSc thesis research project — *Thesis —
+This repository is the artifact of a BSc (undergraduate) thesis research project — *Thesis —
 Future-Self Career Chatbot + Study Platform*. It is shared for **academic review,
 supervision, and reproducibility of the associated thesis only**.
 

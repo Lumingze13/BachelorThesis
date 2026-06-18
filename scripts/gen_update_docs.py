@@ -87,6 +87,9 @@ IMPLEMENTED = [
 ]
 
 UX_POLISH = [
+    "Prompt design — TEN-YEAR HORIZON (Stage B, all three rec variants): the five recommendations and their why/path are now chosen and framed for the next decade's reality (AI/automation/labour-market shifts; favour durable, evolving directions and skills that still matter), not today's job market.",
+    "Prompt design — Stage C (main + baseline): future-reality grounding strengthened — the SPECIFIC chosen career is portrayed as it is ~10 years on (its tasks/tools/what's hired and rewarded have changed), and advice about skills/how-to-get-in must reflect the future labour market, not today's playbook. Reply-length discipline strengthened so MOST replies are short (1–3 sentences) with a deliberate mix, instead of a uniform medium paragraph every turn. (Validated by role-play self-tests.)",
+    "Prompt copy — removed a stale 'Econ/Business student' default reference (now field-agnostic), consistent with the broadened any-major population.",
     "Comfort/display DEFAULT changed from maximal (A+++ / Roomy / Wide) to a neutral premium baseline (A+ / Cozy / Normal); all larger options remain available in the comfort panel (key bumped to v4).",
     "Frontend is now PRECOMPILED (build/*.js via `npm run build`) with React vendored locally — no runtime Babel and no CDN dependency to start; index.html loads the bundle (was: in-browser Babel + unpkg CDN).",
     "Phase-B no longer auto-opens the lock-in over the recommendation cards — cards stay in the thread; the chooser opens on a card tap or the “Choose a career” prompt.",
@@ -208,6 +211,14 @@ def build_plan():
          "Lock-in revealed when directions appear; pauses are forward-only.",
          "Cards stay visible (lock opens on tap); pauses now have a guarded Back; post-survey still no Back into role-play.",
          "Note the card-first behaviour + per-phase Back (with the §7 no-return-after-post rule kept)."),
+        ("§8 Prompts — future horizon",
+         "Stage-B recs from profile + O*NET (present-day); Stage-C has a brief future-time note.",
+         "Stage-B recs explicitly chosen/framed for the 10-yr horizon (AI/automation; durable skills); Stage-C portrays the chosen career as it is ~10 yrs on and gives future-grounded skill/entry advice.",
+         "Add a ‘ten-year horizon’ paragraph to §8.1/§8.5 (rec prompts) and strengthen the §8.2/§8.3 time-anchor so advice reflects the future labour market, not today's."),
+        ("§8 Prompts — reply length",
+         "Role-play replies tend to a uniform medium paragraph.",
+         "Length discipline: most replies short (1–3 sentences), deliberate mix; only big questions earn 2–3 short paragraphs.",
+         "Note the strengthened length rule in §8.2/§8.3 (validated by role-play tests)."),
     ])
 
     h2(d, "3. Suggested replacement wording (drop-in)")
