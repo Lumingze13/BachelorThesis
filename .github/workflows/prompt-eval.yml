@@ -1,0 +1,33 @@
+# Real-model prompt-behaviour gate. Runs the role-play length-variation +
+# future-grounding checks against gpt-5.1 on the UvA proxy — but ONLY when the
+# UVA_API_TOKEN repo secret is configured (the script self-skips with exit 0
+# otherwise, so this is a safe no-op on forks/PRs without the secret).
+#
+# To enable: add repo secrets LLM_BASE_URL (https://llmproxy.uva.nl/v1) and
+# UVA_API_TOKEN. Then this gates lib/prompt.js changes on main + manual runs.
+name: Prompt behaviour (gpt-5.1)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "lib/prompt.js"
+      - "test/prompt_behavior_check.mjs"
+
+jobs:
+  prompt-eval:
+    runs-on: ubuntu-latest
+    env:
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      UVA_API_TOKEN: ${{ secrets.UVA_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+      - run: npm ci
+      # Exits non-zero if length-variation/brevity/future-grounding regress on
+      # gpt-5.1; prints guidance and exits 0 if no UVA_API_TOKEN secret is set.
+      - run: node test/prompt_behavior_check.mjs

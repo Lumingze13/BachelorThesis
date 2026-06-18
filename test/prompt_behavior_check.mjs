@@ -17,10 +17,11 @@
 import { buildSystemPrompt, buildPhaseBDirect } from '../lib/prompt.js';
 import { readFileSync } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Different career TYPES on purpose — analytical, clinical, caring — so the
 // future-grounding check can't pass on tech careers alone.
-const PERSONAS = {
+export const PERSONAS = {
   data_analyst: { career: 'Data analyst', demographics: { age: 21, study_year: 'Third year', major: 'Psychology' }, bigFive: { O: 5.5, C: 4, E: 3.5, A: 5, ES: 3.5 }, riasec: { I: 6, A: 5, S: 4 }, values: ['Achievement'], familiarity: 3, interestStrength: 6, location: 'Amsterdam' },
   nurse: { career: 'Registered nurse', demographics: { age: 20, study_year: 'Second year', major: 'Biomedical Sciences' }, bigFive: { O: 4, C: 5.5, E: 4.5, A: 6, ES: 4 }, riasec: { S: 6, I: 5, R: 4 }, values: ['Relationships'], familiarity: 4, interestStrength: 6, location: 'Rotterdam' },
   teacher: { career: 'Primary school teacher', demographics: { age: 20, study_year: 'Second year', major: 'Education' }, bigFive: { O: 4.5, C: 5, E: 5, A: 6, ES: 4.5 }, riasec: { S: 6, A: 5, E: 4 }, values: ['Relationships'], familiarity: 4, interestStrength: 6, location: 'Utrecht' },
@@ -43,17 +44,17 @@ export function specFor(key) {
   return { career: p.career, system: buildSystemPrompt(p, 'They were drawn to this direction in phase B.', p.location), turns: TURNS };
 }
 
-const SHORT = new Set(['light', 'trivial', 'throwaway', 'closing']);
+export const SHORT = new Set(['light', 'trivial', 'throwaway', 'closing']);
 // Broad "the world/work changed over a decade" detector (works across fields).
-const RE_FUTURE = /\bAI\b|automat|machine|algorithm|\bmodels?\b|the systems?\b|\btools?\b|offload|flag|run themselves|no longer|used to|these days|nowadays|by now|decade|ten years|wearable|sensor|patch(es)?|software|digital|generate|draft|hold for you/i;
-const words = (s) => (String(s).trim().match(/\S+/g) || []).length;
+export const RE_FUTURE = /\bAI\b|automat|machine|algorithm|\bmodels?\b|the systems?\b|\btools?\b|offload|flag|run themselves|no longer|used to|these days|nowadays|by now|decade|ten years|wearable|sensor|patch(es)?|software|digital|generate|draft|hold for you/i;
+export const words = (s) => (String(s).trim().match(/\S+/g) || []).length;
 const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
 
 // Absolute ceilings (the real complaint was walls of text): short turns must be
 // genuinely short, and no reply may be a wall. Caps allow measurement slack over
 // the prompt's ~40w / ~110w targets.
-const SHORT_MAX = 65;   // mean words on light/trivial/throwaway/closing turns (a few sentences)
-const REPLY_MAX = 230;  // any single reply — the Build Plan allows "2–3 short paragraphs"
+export const SHORT_MAX = 65;   // mean words on light/trivial/throwaway/closing turns (a few sentences)
+export const REPLY_MAX = 230;  // any single reply — the Build Plan allows "2–3 short paragraphs"
                         // for big questions (~200w); this flags true walls (300w+), not those.
 
 export function measure(key, replies) {
@@ -80,7 +81,7 @@ function report(results) {
 }
 
 // --- optional model call (study proxy = OpenAI-compatible; else Anthropic) -----
-async function callModel(system, history) {
+export async function callModel(system, history, temp) {
   const base = (process.env.LLM_BASE_URL || '').replace(/\/+$/, '');
   const token = process.env.UVA_API_TOKEN || '';
   const model = process.env.LLM_MODEL || 'gpt-5.1';
@@ -92,7 +93,7 @@ async function callModel(system, history) {
       try {
         const r = await fetch(`${base}/chat/completions`, {
           method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ model, temperature: Number(process.env.LLM_TEMPERATURE ?? 0.9), max_tokens: Number(process.env.LLM_MAX_TOKENS ?? 16384), messages: [{ role: 'system', content: system }, ...history] }),
+          body: JSON.stringify({ model, temperature: temp ?? Number(process.env.LLM_TEMPERATURE ?? 0.9), max_tokens: Number(process.env.LLM_MAX_TOKENS ?? 16384), messages: [{ role: 'system', content: system }, ...history] }),
         });
         if (r.status === 429 || r.status >= 500) { await new Promise((s) => setTimeout(s, 1200 * (attempt + 1))); continue; }
         const j = await r.json();
@@ -127,7 +128,7 @@ async function generate(key) {
 }
 
 // --- Stage-B recommendation cards: future-aware AND concise -------------------
-const RE_FUTURE_B = new RegExp(RE_FUTURE.source + '|durable|enduring|judgement|judgment|stakeholder|interpret|relationship|human|evolv|reshap|2030|2036', 'i');
+export const RE_FUTURE_B = new RegExp(RE_FUTURE.source + '|durable|enduring|judgement|judgment|stakeholder|interpret|relationship|human|evolv|reshap|2030|2036', 'i');
 async function generateRecs(key) {
   const sys = buildPhaseBDirect(PERSONAS[key]);
   const h = [{ role: 'user', content: 'I want something that helps people but also uses evidence and data, not pure therapy.' }];
@@ -190,4 +191,4 @@ async function main() {
   process.exit(report(results) ? 0 : 1);
 }
 
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

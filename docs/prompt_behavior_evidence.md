@@ -83,6 +83,32 @@ all three career types pass. A clean security pass was done in parallel: chat te
 renders through React-escaped `**bold**`/`*italic*` only (no HTML/links → no XSS),
 DB writes are fully parameterized, and the rec JSON parse is guarded.
 
+## Larger sample (N=8 careers × random temperature) — gpt-5.1
+
+`test/prompt_behavior_stats.mjs` sweeps 8 personas spanning career TYPES
+(analytical, clinical, caring, tech, creative, professional, trades, business),
+each run through the 8-turn Stage-C script at a **random temperature in 0.7–1.0**,
+plus Stage-B. Full table in `docs/prompt_behavior_evidence/stats.md`. Aggregate:
+
+- **Length variation: 8/8** — robust across every career type and temperature
+  (pooled: throwaway ~29w, light ~55w, big ~180w, advice ~177w).
+- **Future-grounding (day-to-day/advice): 8/8.**
+- **Stage-B cards: concise 8/8, mean 4.1/5 future-aware.**
+- **Absolute brevity: 6/8.** gpt-5.1 has a residual verbosity tail: on a couple
+  of big *open* questions it still over-writes (one electrician reply hit ~400w).
+  The mean big-question reply (~180w) is in spec ("2–3 short paragraphs"), and the
+  "always one uniform paragraph" problem is gone — but the model doesn't perfectly
+  obey the ~120-word ceiling every time. This is a known gpt-5.1 trait that prompt
+  caps reduce but can't fully remove; flagged honestly rather than hidden.
+
+## CI gate (runs only with the key)
+
+`.github/workflows/prompt-eval.yml` runs `test/prompt_behavior_check.mjs` on
+changes to `lib/prompt.js` (and manual dispatch). It self-skips (exit 0) unless
+the `UVA_API_TOKEN` repo secret is set; with it, the check gates the role-play
+effects against gpt-5.1 and fails the build on regression. Add repo secrets
+`LLM_BASE_URL` (`https://llmproxy.uva.nl/v1`) and `UVA_API_TOKEN` to enable it.
+
 ## Reproduce
 
 ```bash
