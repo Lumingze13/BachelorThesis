@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+      - run: npm ci
+      # `npm test` includes build_sync_test, which fails if the committed
+      # build/*.js has drifted from the .jsx source — so CI also guards the
+      # precompiled bundle, not just the logic.
+      - run: npm test
+      # Confirm the production build still runs end to end.
+      - run: npm run build
