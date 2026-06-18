@@ -56,7 +56,7 @@ function Landing({
     className: "pill"
   }, "A conversation with your future self")), React.createElement("p", {
     className: "hero-time"
-  }, "A short questionnaire (~10 min) \xB7 choosing a career to step into (~10\u201315 min) \xB7 the conversation itself (20\u201330 min, you decide) \u2014 about an hour in all.", React.createElement("br", null), "Breaks are built in between parts, and you can pause or close the page at any point \u2014 your progress is saved and you continue where you left off.")), showHow && React.createElement("div", {
+  }, "A short questionnaire (~10 min) \xB7 choosing a career to step into (~10\u201315 min) \xB7 the conversation itself (20\u201330 min, you decide) \u2014 about an hour in all.", React.createElement("br", null), "Breaks are built in between parts, and you can pause or close the page at any point \u2014 ", React.createElement("strong", null, "your progress is saved and you can continue where you left off."))), showHow && React.createElement("div", {
     className: "how-overlay",
     onClick: () => setShowHow(false),
     role: "dialog",
@@ -148,7 +148,7 @@ function AvatarCreation({
     className: "field-block"
   }, React.createElement("label", {
     className: "field-label"
-  }, "Your name (or a name to go by)"), React.createElement("input", {
+  }, "Your name (or what you'd prefer to go by)"), React.createElement("input", {
     className: "text-input",
     placeholder: "e.g. Maya, Sam, Alex\u2026",
     value: name,
