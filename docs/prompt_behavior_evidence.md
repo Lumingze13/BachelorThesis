@@ -54,6 +54,23 @@ explicitly for clinical/hands-on/caring/creative/trades, not only desk work.
   (tools handle differentiation/worksheets; the human facilitation became the core)
   rather than timeless "explain clearly".
 
+## Stage-B recommendations (future-aware cards) — gpt-5.1
+
+The rec cards (`buildPhaseB*`) were also checked on gpt-5.1. Initially the `why`
+fields were 0/5 future-aware — the horizon *paragraph* didn't shape the JSON. Fix:
+bake it into the field **schema** ("why … and why it still holds up a decade out";
+"path … plus one future-relevant skill to lean into"), with a hard one-short-
+sentence cap so the cards stay compact. After: the cards pick durable careers and
+frame each `path` around the human skills that endure as the field automates
+(judgement, stakeholder communication, interpretation), with explicit decade
+notes on several ("as tech personalises learning", "future health systems",
+"by 2036") — concise (≤~26 words/field). Example:
+
+> **UX Researcher (health/education)** — *why:* "uses your psychology background to
+> design and test digital tools that genuinely help users, a field expanding as
+> tech personalises learning and care." *path:* "combine psychology with UX
+> research methods and testing; build a portfolio from student projects by 2036."
+
 ## Reproduce
 
 ```bash
