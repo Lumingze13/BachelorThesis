@@ -83,23 +83,30 @@ all three career types pass. A clean security pass was done in parallel: chat te
 renders through React-escaped `**bold**`/`*italic*` only (no HTML/links → no XSS),
 DB writes are fully parameterized, and the rec JSON parse is guarded.
 
-## Larger sample (N=8 careers × random temperature) — gpt-5.1
+## Larger sample (N=8 careers × random temperature, BOTH arms) — gpt-5.1
 
 `test/prompt_behavior_stats.mjs` sweeps 8 personas spanning career TYPES
 (analytical, clinical, caring, tech, creative, professional, trades, business),
 each run through the 8-turn Stage-C script at a **random temperature in 0.7–1.0**,
-plus Stage-B. Full table in `docs/prompt_behavior_evidence/stats.md`. Aggregate:
+for **both the MAIN role-play and the BASELINE control** (conditions differ only
+in Stage-C), plus the shared Stage-B cards. Full table in `stats.md`.
 
-- **Length variation: 8/8** — robust across every career type and temperature
-  (pooled: throwaway ~29w, light ~55w, big ~180w, advice ~177w).
-- **Future-grounding (day-to-day/advice): 8/8.**
-- **Stage-B cards: concise 8/8, mean 4.1/5 future-aware.**
-- **Absolute brevity: 6/8.** gpt-5.1 has a residual verbosity tail: on a couple
-  of big *open* questions it still over-writes (one electrician reply hit ~400w).
-  The mean big-question reply (~180w) is in spec ("2–3 short paragraphs"), and the
-  "always one uniform paragraph" problem is gone — but the model doesn't perfectly
-  obey the ~120-word ceiling every time. This is a known gpt-5.1 trait that prompt
-  caps reduce but can't fully remove; flagged honestly rather than hidden.
+A between-arms **length confound was caught and fixed here**: in the first dual-arm
+sweep the baseline was systematically ~1.4× longer than main (baseline big ~230w
+vs main ~164w; brief 2/8 vs 7/8; walls up to ~580w). Cause: main carried its length
+rule at primacy while baseline's was buried mid-prompt. Length is a shared
+readability property (like the realism floor), not a manipulated design component,
+so it must match across arms. After moving the baseline rule to primacy:
+
+| arm | varies | brief | future | big-question mean |
+|---|---|---|---|---|
+| MAIN | 8/8 | 8/8 | 8/8 | ~165w |
+| BASELINE | 8/8 | 8/8 | 8/8 | ~126w |
+
+Both arms now vary, stay brief (no walls; max ≤225w), and stay future-grounded;
+Stage-B concise 8/8, mean 3.8/5 future-aware. The residual main–baseline gap
+(~165 vs ~126w) reflects main's intended richer scene texture, not an uncontrolled
+length artifact — length is no longer confounded with the manipulation.
 
 ## CI gate (runs only with the key)
 
