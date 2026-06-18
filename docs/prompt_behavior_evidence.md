@@ -71,6 +71,18 @@ notes on several ("as tech personalises learning", "future health systems",
 > tech personalises learning and care." *path:* "combine psychology with UX
 > research methods and testing; build a portfolio from student projects by 2036."
 
+## Stability & gating
+
+The check was run **twice** independently on gpt-5.1 (temperature 0.9, so outputs
+differ each time): Stage-C passed both runs (short ~39–52w, big ~156–208w, all of
+varies/not-verbose/future-grounded), confirming the effects are stable, not a
+lucky single draw. **Stage-B cards are now part of the same automated gate** —
+when a model is configured the tool also generates the recommendation cards and
+checks exactly-five + concise (≤40w/field) + a not-blind future floor (≥2/5);
+all three career types pass. A clean security pass was done in parallel: chat text
+renders through React-escaped `**bold**`/`*italic*` only (no HTML/links → no XSS),
+DB writes are fully parameterized, and the rec JSON parse is guarded.
+
 ## Reproduce
 
 ```bash

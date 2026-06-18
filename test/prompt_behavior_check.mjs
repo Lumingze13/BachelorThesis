@@ -14,7 +14,7 @@
  *
  * Exit code is non-zero if a check fails, so it can gate CI/fielding.
  */
-import { buildSystemPrompt } from '../lib/prompt.js';
+import { buildSystemPrompt, buildPhaseBDirect } from '../lib/prompt.js';
 import { readFileSync } from 'fs';
 import path from 'path';
 
@@ -126,6 +126,30 @@ async function generate(key) {
   return replies;
 }
 
+// --- Stage-B recommendation cards: future-aware AND concise -------------------
+const RE_FUTURE_B = new RegExp(RE_FUTURE.source + '|durable|enduring|judgement|judgment|stakeholder|interpret|relationship|human|evolv|reshap|2030|2036', 'i');
+async function generateRecs(key) {
+  const sys = buildPhaseBDirect(PERSONAS[key]);
+  const h = [{ role: 'user', content: 'I want something that helps people but also uses evidence and data, not pure therapy.' }];
+  const r1 = await callModel(sys, h); if (r1 == null) return null; h.push({ role: 'assistant', content: r1 });
+  h.push({ role: 'user', content: 'yeah exactly — people plus data, applied not clinical.' });
+  const r2 = await callModel(sys, h); if (r2 == null) return null;
+  const m = String(r2).match(/```json\s*([\s\S]*?)```/);
+  if (!m) return [];
+  try { return JSON.parse(m[1]).recommendations || []; } catch (e) { return []; }
+}
+function measureRecs(key, recs) {
+  const fieldW = recs.flatMap((x) => [words(x.why), words(x.path)]);
+  const five = recs.length === 5;
+  const concise = fieldW.length > 0 && Math.max(...fieldW) <= 40; // cards must stay compact
+  const futureCount = recs.filter((x) => RE_FUTURE_B.test(x.why || '') || RE_FUTURE_B.test(x.path || '')).length;
+  // Regression floor (not a quality target): the old prompt was 0/5 future-blind and
+  // could balloon the cards. Gate on "not blind" + concise + exactly five; the exact
+  // count fluctuates with temperature and some careers read as durable implicitly.
+  const futureOK = futureCount >= 2;
+  return { career: PERSONAS[key].career, n: recs.length, maxField: fieldW.length ? Math.max(...fieldW) : 0, futureCount, five, concise, futureOK, pass: five && concise && futureOK };
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const mi = args.indexOf('--measure');
@@ -151,6 +175,17 @@ async function main() {
       }
       results.push(measure(k, replies));
     }
+    // Stage-B recommendation cards (only when a model is available to generate them)
+    console.log('\n— Stage-B recommendation cards —');
+    let bOk = true;
+    for (const k of keys) {
+      const recs = await generateRecs(k);
+      if (!recs) break;
+      const r = measureRecs(k, recs);
+      console.log(`${r.career}: ${r.n} cards | concise(maxField ${r.maxField}w): ${r.concise ? 'PASS' : 'FAIL'} | future-aware: ${r.futureCount}/${r.n} ${r.futureOK ? 'PASS' : 'FAIL'}`);
+      bOk = bOk && r.pass;
+    }
+    if (!bOk) { console.log('\nSTAGE-B CARDS CHECK FAILED ❌'); return process.exit(1); }
   }
   process.exit(report(results) ? 0 : 1);
 }
