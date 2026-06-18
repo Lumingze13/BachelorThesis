@@ -108,6 +108,27 @@ Stage-B concise 8/8, mean 3.8/5 future-aware. The residual main–baseline gap
 (~165 vs ~126w) reflects main's intended richer scene texture, not an uncontrolled
 length artifact — length is no longer confounded with the manipulation.
 
+## Manipulation strength — does MAIN actually differ from BASELINE? (gpt-5.1)
+
+`test/prompt_manipulation_check.mjs` tests whether the MAIN role-play delivers the
+design components the BASELINE lacks — communication-style **mirroring** and
+**concrete episodic scenes** (what post-survey checks mc_style / mc_scene ask).
+A user writes in a loud casual register (all-lowercase, slang: "yo ngl... hi??")
+across 3 careers; the arms are compared.
+
+- **Scenes:** MAIN ~14 scene-markers/run vs BASELINE ~3 — the episodic-scene
+  component is strongly differentiated. ✅
+- **Style mirroring:** initially NOT differentiated — both arms replied in proper
+  capitalised prose (cap-start ~97%) ignoring the user's lowercase voice (gpt-5.1's
+  "write properly" bias). After strengthening Component 1 to explicitly match
+  capitalisation/punctuation/slang: MAIN cap-start **2%** (mirrors the lowercase
+  user) vs BASELINE **96%**, and it is **bidirectional** — a formal user gets
+  formal replies (MAIN cap-start 100%). ✅
+
+So the study's core manipulation (style mirroring + concrete scenes) now produces
+the intended, measurable between-arm difference on the real model — support for the
+mc_style / mc_scene manipulation checks rather than assuming they separate.
+
 ## CI gate (runs only with the key)
 
 `.github/workflows/prompt-eval.yml` runs `test/prompt_behavior_check.mjs` on
