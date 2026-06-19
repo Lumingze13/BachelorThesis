@@ -561,3 +561,44 @@ verbatim-wording confirmation before fielding. (commit `2f4beac`.)
   manipulation checks, 2-item FSCS. Remaining divergences are the planning **docs lagging
   the code**, tracked by the `*_to_code_change_record_and_suggestions` documents. Stale
   PR #2 closed as superseded.
+
+## Round 13 (2026-06-19) — security hardening, stage-B card fix, recruiter tooling, gpt-5.1 validation (Kangzhi)
+
+Authored on branch `claude/sleepy-brown-039dhc`; each item merged to `main` and deployed.
+The matching `docs/Build_Plan_v5.4_to_code_change_record_and_suggestions.docx` carries the same set as its §6.
+
+- **§13b/§14 static serving locked to an ALLOWLIST** [DEPLOYED]: `express.static` had served the
+  whole repo minus a short denylist, leaving `admin/admin.jsx` + `results/results.jsx` (the gated
+  dashboards' own source — defeating their token gate), `server.js`, `build.mjs`, `package.json`,
+  `analysis.py` and `docs/*.docx` **world-readable in production** (confirmed with curl). Replaced
+  with an allowlist: only `/`, `index.html`, `config.js`, `styles.css`, `build/*.js`, `vendor/*.js`
+  are public; everything else 404s. Verified live. (PR #16)
+- **§13 “Export de-identified” now drops the participant name** [DEPLOYED]: `deidentifyStudy()`
+  deletes `profile.name` (anonymizeStudy re-labels `P0x` for `/results`); the file was labelled
+  de-identified but had shipped real names. `reconstruct_test` asserts it. (PR #16)
+- **§7/§8 stage-B opening card leak fixed** [DEPLOYED]: the DIRECT arm emits its five cards in its
+  FIRST turn, but only `/api/chat` ran `extractRecommendations()`, so `/api/phase-b/session` returned
+  a raw fenced-JSON block into the opening bubble. The session route (and `/api/regenerate`, for
+  symmetry) now extract the opening → `{opening: clean, recommendations}`; the client renders cards.
+  `test/phaseb_opening_test.mjs` (real server + stub LLM) guards it. (PR #17)
+- **§13b auth/CORS hardening** [DEPLOYED]: admin + results token checks use `crypto.timingSafeEqual`
+  (constant-time); the wildcard CORS is scoped off `/api/admin` + `/api/results`. (PR #16)
+- **§13b results-dashboard robustness** [DEPLOYED]: Overview guards the nested `mean_delta`/`mean_post`
+  derefs; the RQ-results runs view polls queued/running runs like the admin Eval + Sims views; admin
+  session-detail “link #<pid>” relabelled “PID <pid>”. (PR #16)
+- **§13b recruiter attribution (researcher tooling)** [DEPLOYED]: additive `recruiter` column (+ index);
+  create/update/list/reconstruct carry it; `listSessions` gains a recruiter filter. Recruit tab gets a
+  “who's sending these out” selector (Andrea/Thy/Kaehl/Gleb/Unassigned); links group as
+  “sent by X · Y version · rec × cond”; Sessions gets a By column + recruiter filter; CSV/JSON exports
+  gain the column. The recruiter is admin metadata only — NOT in the participant link. `db_test` covers it.
+  (PR #21 + label-clarity follow-up)
+- **§14 public landing page** [DEPLOYED]: `site/index.html` (app link + a non-biasing project summary,
+  app-matched styling) served at `/about` (alias `/welcome`). GitHub Pages could not be enabled without
+  repo-owner access (collaborator Settings has no Pages option; the Actions token gets “Resource not
+  accessible by integration” on enablement), so it is served from the app; a `workflow_dispatch`-only
+  `.github/workflows/pages.yml` remains for the owner. (PRs #18–#20)
+- **§8 stage-B DIRECT prompt validated on the real model** [VERIFIED]: driven end-to-end through gpt-5.1
+  (UvA proxy) across multiple profiles — exactly five cards every run (no raw-JSON leak), the correct
+  direct manipulation (no exploration question before cards), and the post-pick location negotiation with
+  genuine geography-fit reasoning. **No prompt change required**; the confirmed direct prompt is faithful
+  and behaves to spec on gpt-5.1.
