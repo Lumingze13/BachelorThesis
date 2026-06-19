@@ -45,6 +45,13 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS free_continuation jsonb NOT NULL D
 -- study cell (e.g. Gleb can hand out a link for the shared cell). Admin-set at
 -- link creation; null for ad-hoc / self-made sessions.
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS recruiter text;
+-- Soft "archive" for the admin lists. Removing a link from the Recruit/Sessions
+-- list sets archived_at instead of deleting the row, so participant DATA is
+-- NEVER lost incidentally. A row is only ever truly removed by the explicit,
+-- separate "Delete data permanently" action (which the server allows only on an
+-- already-archived row). Added idempotently so existing deploys migrate on boot.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS archived_at timestamptz;
+CREATE INDEX IF NOT EXISTS sessions_archived_idx ON sessions (archived_at);
 CREATE INDEX IF NOT EXISTS sessions_rec_idx   ON sessions (rec);
 CREATE INDEX IF NOT EXISTS sessions_study_idx ON sessions (study);
 CREATE INDEX IF NOT EXISTS sessions_recruiter_idx ON sessions (recruiter);
