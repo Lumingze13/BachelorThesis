@@ -602,3 +602,13 @@ The matching `docs/Build_Plan_v5.4_to_code_change_record_and_suggestions.docx` c
   direct manipulation (no exploration question before cards), and the post-pick location negotiation with
   genuine geography-fit reasoning. **No prompt change required**; the confirmed direct prompt is faithful
   and behaves to spec on gpt-5.1.
+- **§11 stage-C reply length — stricter brevity reminder** [DEPLOYED]: the per-turn `BREVITY_REMINDER`
+  (server.js, appended every phase-C turn for BOTH main + baseline) was too soft. With the "ideas to ask"
+  cards — every tap sends a real, substantive question — gpt-5.1 answered each one in full: measured
+  ~135 words/reply on an all-card conversation, 5 of 8 over 110 words, little variation. Replaced with a
+  strict, numeric version (default 1–2 sentences; hard ~90-word ceiling; explicit "vary hard / never two
+  medium paragraphs in a row"). Re-measured across Clinical-Psychologist / Software-Engineer /
+  Primary-Teacher (all-card): mean ~60–70 words, range ~40–90, no truncation, vivid scenes intact, the
+  one-question rule held. Kept identical across the two arms (symmetric — no length confound). The verbose
+  REPLY LENGTH / PACING blocks inside the system prompt are left as-is (the trailing reminder, being most
+  recent, does the work).

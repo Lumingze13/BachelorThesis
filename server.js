@@ -61,12 +61,15 @@ const sessions = new Map();
 
 // Phase-C only: re-asserted on EVERY call because as a conversation grows, a
 // length rule stated once at the top of a long system prompt loses out to the
-// model's instinct to paint full scenes (live-tested on gpt-5.1: a casual
-// question still drew 300+ words). Now it also pushes for VARIATION — the
-// supervisor (14 Jun 2026) found replies almost always the same length. Identical
-// across main/baseline; Phase B (incl. Andrea's prompts) is never touched.
+// model's instinct to paint full scenes (live-tested on gpt-5.1). The earlier,
+// softer wording wasn't enough: with the "ideas to ask" cards (every tap sends a
+// real, substantive question) gpt-5.1 answered each one fully — measured ~135
+// words/reply, 5 of 8 over 110, with little variation. This stricter, numeric
+// version pulls it to ~60–70 words with real high/low variation while keeping the
+// vivid scenes (tested across careers, 2026-06-19). Identical across main/baseline
+// (kept symmetric to avoid a length confound); Phase B (incl. Andrea's) untouched.
 const BREVITY_REMINDER =
-  'Keep this reply comfortable to read, and vary it from your last few. Let the weight of what they just said set the length: a light question gets a short answer (sometimes a line or two), a real one can run to 2-3 short paragraphs — never a wall of text, and never the same length every time. At most one question, only if it follows naturally from the conversation and is bridged into with a connecting sentence — never dropped in cold.';
+  'LENGTH — STRICT (overrides the length guidance above). Default reply = 1–2 sentences (~30 words). Even for a real, open question, STOP by ~90 words — most answers should be ~40–60. Vary hard: each reply a CLEARLY different length from your last one or two; never two medium paragraphs in a row; if you can answer in one vivid line, do. Brevity beats completeness. End with at most ONE question, only when it follows naturally and is bridged in — never dropped in cold.';
 
 /** Call the configured model with a system prompt + history; return assistant text. */
 async function complete(systemPrompt, messages, { remind = false } = {}) {
