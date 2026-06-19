@@ -356,3 +356,37 @@ The instrument list is now: TIPI-10, O*NET Work Values, RIASEC, **IOS (closeness
 open-ended ×2, and **CIP-Short Lack of Readiness (distal outcome, replaces CDSE-SA +
 CIP-CCA)**. CIP-CCA placeholders and the CDSE-SA verification task in §6/earlier are no
 longer applicable.
+
+## 8. Session of 2026-06-19 — stimulus integrity, ethics/privacy, researcher tooling
+
+Study-relevant changes from the 2026-06-19 session (branch `claude/sleepy-brown-039dhc`,
+merged to `main` + deployed). Implementation detail is in `BUILD_PLAN_CHANGE_RECORD.md`
+Round 13 and the `docs/*_to_code_change_record_and_suggestions.docx` §6.
+
+### 8.1 Stage-B direct-arm card integrity (stimulus)
+
+The **direct** arm presents its five career cards in its *opening* turn; a bug had let that
+opening leak the raw recommendation JSON into the participant's first chat bubble. Fixed —
+the opening is now parsed into cards like any later turn. **Validated on the production model
+(gpt-5.1):** exactly five cards every run, the direct (no-exploration-question) manipulation,
+ten-year framing, and the geographic-realism location step after the participant settles on a
+career — all behave to spec. No prompt change was needed.
+
+### 8.2 De-identified export truly de-identifies (ethics)
+
+The admin "Export de-identified" file now **strips the participant's self-entered name** (it had
+been labelled de-identified while still carrying real names). The full identified export is
+unchanged for authorised use.
+
+### 8.3 Study-design documents no longer publicly downloadable (ethics / IP)
+
+The production server had been serving `docs/*.docx` — this Brief, the Build Plan, the
+change-records — to anyone with the URL. Static serving is now an allowlist, so only the
+participant app's assets are public. Relevant to research-IP and pre-registration hygiene.
+
+### 8.4 Researcher fielding — recruiter attribution (no measurement change)
+
+The Recruit tab can now tag each link with **who is handing it out** (Andrea / Thy / Kaehl /
+Gleb), shown in the link groups ("sent by X · Y version") and the Sessions list, filterable,
+and included in exports — for per-recruiter recruitment tracking. The recruiter is admin-side
+metadata only and is **not** in the participant-facing link, so it cannot affect the experience.
