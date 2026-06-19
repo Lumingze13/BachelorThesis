@@ -7,6 +7,7 @@ import { dbEnabled, initSchema, closePool } from '../lib/db.js';
 import {
   createSession, saveSession, getSessionRow, getMessages,
   listSessions, deleteSession, reconstructStudy, exportStudies, claimSessionForRun,
+  archiveSession, unarchiveSession,
 } from '../lib/sessions.js';
 
 if (!dbEnabled) {
@@ -87,6 +88,24 @@ assert.equal(fork.status, 'started', 'fork starts a clean run');
 await deleteSession(link.id);
 await deleteSession(reopen.id);
 console.log('✓ claim/fork preserves the prior run under the same link (two records, one pid)');
+
+// Archive = soft remove: data is KEPT, the row just leaves the active list and
+// can be restored. Hard delete is a separate, deliberate step.
+const arc = await createSession({ condition: 'main', rec: 'direct', study: 'kangzhi', pid: 'ARCH_PID' });
+await saveSession(arc.id, { profile: { name: 'Keep me' }, phaseB: { career: 'Nurse' }, finalize: true });
+const archived = await archiveSession(arc.id);
+assert.ok(archived.archived_at, 'archiveSession sets archived_at');
+const stillThere = await getSessionRow(arc.id);
+assert.equal(stillThere.phase_b.career, 'Nurse', 'archived row keeps all its data');
+assert.equal(reconstructStudy(stillThere).meta.archivedAt != null, true, 'archivedAt surfaces in reconstructed meta');
+assert.ok((await listSessions({ archived: 'active' })).every((r) => r.id !== arc.id), 'archived row is hidden from the active list');
+assert.ok((await listSessions({ archived: 'archived' })).some((r) => r.id === arc.id), 'archived row appears in the archived list');
+assert.ok((await listSessions({ archived: 'all' })).some((r) => r.id === arc.id), 'archived row still present in the full list');
+const restored = await unarchiveSession(arc.id);
+assert.equal(restored.archived_at, null, 'unarchiveSession clears archived_at');
+assert.ok((await listSessions({ archived: 'active' })).some((r) => r.id === arc.id), 'restored row is back in the active list');
+await deleteSession(arc.id);
+console.log('✓ archive/restore keeps data and toggles list visibility (no data loss)');
 
 await closePool();
 console.log('\nDB INTEGRATION TESTS PASSED ✅');

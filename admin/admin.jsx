@@ -241,16 +241,33 @@ function SessionsView() {
   const [recruiter, setRecruiter] = useState('');
   const [open, setOpen] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [view, setView] = useState('active'); // active | archived | all
   const [err, setErr] = useState(null);
   const load = useCallback(() => {
     const q = new URLSearchParams();
     if (condition) q.set('condition', condition);
     if (status) q.set('status', status);
     if (recruiter) q.set('recruiter', recruiter);
+    if (view !== 'all') q.set('archived', view); // 'active' | 'archived'
     api('/api/admin/sessions?' + q.toString()).then(setRows).catch((e) => setErr(e.message));
-  }, [condition, status, recruiter]);
+  }, [condition, status, recruiter, view]);
   useEffect(() => { load(); }, [load]);
-  const del = async (id) => { if (!confirm('Delete session ' + short(id) + '?')) return; await api('/api/admin/sessions/' + id, { method: 'DELETE' }); load(); };
+  // "Delete" now ARCHIVES (keeps the data, just labels it). Permanent removal is
+  // a separate, deliberate step (purge) available only after archiving.
+  const archive = async (id) => {
+    if (!confirm('Remove session ' + short(id) + ' from the list?\n\nIts data is KEPT — the row is archived and can be restored or permanently deleted later. Nothing is lost.')) return;
+    try { await api('/api/admin/sessions/' + id + '/archive', { method: 'POST' }); } catch (e) { setErr(e.message); }
+    load();
+  };
+  const restore = async (id) => {
+    try { await api('/api/admin/sessions/' + id + '/unarchive', { method: 'POST' }); } catch (e) { setErr(e.message); }
+    load();
+  };
+  const purge = async (id) => {
+    if (!confirm('PERMANENTLY delete ' + short(id) + ' and its full transcript from the database?\n\nThis CANNOT be undone. Use Restore instead if you are unsure.')) return;
+    try { await api('/api/admin/sessions/' + id, { method: 'DELETE' }); } catch (e) { setErr(e.message); }
+    load();
+  };
   if (err) return <div className="note">{err}</div>;
   return (
     <div>
@@ -265,6 +282,11 @@ function SessionsView() {
         <select value={recruiter} onChange={(e) => setRecruiter(e.target.value)} title="Filter by who handed out the link">
           <option value="">All recruiters</option>
           {RECRUITERS.map((name) => <option key={name} value={name}>{name}</option>)}
+        </select>
+        <select value={view} onChange={(e) => setView(e.target.value)} title="Archived rows are kept (data preserved) but hidden from the active list">
+          <option value="active">Active</option>
+          <option value="archived">Archived</option>
+          <option value="all">Active + archived</option>
         </select>
         <button className="btn" onClick={load}>Refresh</button>
         <div className="spacer"></div>
@@ -296,7 +318,15 @@ function SessionsView() {
                   title="Copy the participant recruit link (start fresh through consent). Saved on the shared row, so anyone on the team can copy it.">Copy link</button>
                 <a className="btn" href={resumeUrl(r)} target="_blank" rel="noreferrer"
                   title="Continue this run where it stopped (works on any device; the future self keeps its memory)">Resume ↗</a>
-                <button className="btn danger" onClick={() => del(r.id)}>Delete</button>
+                {r.archived_at ? [
+                  <span key="a" className="muted" title={'Archived ' + fmt(r.archived_at) + ' — data kept'}>archived</span>,
+                  <button key="r" className="btn" onClick={() => restore(r.id)}>Restore</button>,
+                  <button key="p" className="btn danger" onClick={() => purge(r.id)}
+                    title="Permanently delete this session and its transcript — cannot be undone">Delete data</button>,
+                ] : (
+                  <button className="btn" onClick={() => archive(r.id)}
+                    title="Remove from the list but KEEP the data (archive). Permanent deletion is a separate step.">Archive</button>
+                )}
               </td>
             </tr>
           ))}
@@ -565,31 +595,44 @@ function RecruitView() {
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
-  // Delete a single recruit link (its session row). Links a participant has
-  // already started carry data, so they get a louder confirm; unused links
-  // (status 'started', no career/turns) are safe throwaways.
-  const delOne = async (l) => {
+  // Removing a link now ARCHIVES it (label only) — its data is always kept and
+  // can be restored. Permanent deletion is a separate, deliberate step below.
+  const archiveOne = async (l) => {
     const msg = l.used
-      ? `Delete ${l.pid}? A participant has ALREADY STARTED this one — its session data will be permanently removed. Continue?`
-      : `Delete unused link ${l.pid}?`;
+      ? `Remove ${l.pid} from the list? A participant has started it — its data is KEPT (archived) and can be restored or permanently deleted later. Nothing is lost.`
+      : `Remove unused link ${l.pid}? (It is archived, not deleted — restorable anytime.)`;
     if (!confirm(msg)) return;
     setBusy(true); setErr(null); setNotice(null);
-    try { await api('/api/admin/sessions/' + l.id, { method: 'DELETE' }); await load(); }
+    try { await api('/api/admin/sessions/' + l.id + '/archive', { method: 'POST' }); await load(); }
     catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
-  // Bulk-clean a group: delete every UNUSED link in it (never touches links a
-  // participant has started), for tidying up over-generated test links.
-  const delUnused = async (g) => {
+  // Bulk: archive every UNUSED link in a group (tidy over-generated test links).
+  // Used links (with data) are never touched. Nothing is deleted — just archived.
+  const archiveUnused = async (g) => {
     const unused = g.links.filter((l) => !l.used);
     if (!unused.length) return;
-    if (!confirm(`Delete ${unused.length} unused link${unused.length > 1 ? 's' : ''} in "${g.label}"? Links a participant has already started are kept.`)) return;
+    if (!confirm(`Archive ${unused.length} unused link${unused.length > 1 ? 's' : ''} in "${g.label}"? They are hidden from the list but kept (restorable). Links a participant has started are not touched.`)) return;
     setBusy(true); setErr(null); setNotice(null);
     try {
-      for (const l of unused) await api('/api/admin/sessions/' + l.id, { method: 'DELETE' });
+      for (const l of unused) await api('/api/admin/sessions/' + l.id + '/archive', { method: 'POST' });
       await load();
-      setNotice(`Deleted ${unused.length} unused link${unused.length > 1 ? 's' : ''}.`);
+      setNotice(`Archived ${unused.length} unused link${unused.length > 1 ? 's' : ''} (data kept; restorable).`);
     } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  };
+  const restoreOne = async (l) => {
+    setBusy(true); setErr(null); setNotice(null);
+    try { await api('/api/admin/sessions/' + l.id + '/unarchive', { method: 'POST' }); await load(); }
+    catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  };
+  // The ONLY permanent removal. Allowed by the server only on archived rows.
+  const purgeOne = async (l) => {
+    if (!confirm(`PERMANENTLY delete ${l.pid} and its full transcript from the database?\n\nThis CANNOT be undone. Use Restore if you are unsure.`)) return;
+    setBusy(true); setErr(null); setNotice(null);
+    try { await api('/api/admin/sessions/' + l.id, { method: 'DELETE' }); await load(); }
+    catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
   // Build display groups from the SHARED rows: recruited links (those with a
@@ -597,16 +640,22 @@ function RecruitView() {
   // A link is "used" once a participant has actually started it (status moved off
   // 'started', or a career / Phase-C turns were recorded) — those carry real data.
   const isUsed = (r) => r.status !== 'started' || Boolean(r.career) || (r.phase_c_turns || 0) > 0;
-  const groupMap = {};
-  for (const r of rows) {
-    if (!r.pid) continue;
+  const cellLabel = (r) => {
     // Disambiguate the two names: "sent by <recruiter>" (who distributed the
     // link) vs "<study> version" (which chatbot version) — so "Gleb → andrea"
     // can't be misread as one person.
     const who = r.recruiter ? `sent by ${r.recruiter} · ` : '';
-    const label = `${who}${r.study || '—'} version · ${r.rec || '—'} × ${r.condition || '—'}`;
-    (groupMap[label] = groupMap[label] || []).push({ id: r.id, pid: r.pid, link: recruitUrl(r), created: r.created_at || '', used: isUsed(r) });
+    return `${who}${r.study || '—'} version · ${r.rec || '—'} × ${r.condition || '—'}`;
+  };
+  const groupMap = {};
+  const archivedLinks = []; // kept-but-hidden links (data preserved)
+  for (const r of rows) {
+    if (!r.pid) continue;
+    const link = { id: r.id, pid: r.pid, link: recruitUrl(r), created: r.created_at || '', used: isUsed(r), label: cellLabel(r), archivedAt: r.archived_at || null };
+    if (r.archived_at) { archivedLinks.push(link); continue; } // archived → not in the active groups
+    (groupMap[link.label] = groupMap[link.label] || []).push(link);
   }
+  archivedLinks.sort((a, b) => String(a.pid).localeCompare(String(b.pid), undefined, { numeric: true }));
   const groups = Object.entries(groupMap).map(([label, links]) => {
     links.sort((a, b) => String(a.pid).localeCompare(String(b.pid), undefined, { numeric: true }));
     const latest = links.reduce((m, l) => (l.created > m ? l.created : m), '');
@@ -683,20 +732,36 @@ function RecruitView() {
               {g.unusedCount ? <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}> · {g.unusedCount} unused</span> : null}</h3>
             <div className="row" style={{ marginBottom: 10 }}>
               <button className="btn" onClick={() => copyGroup(g.label, g.links)}>{copied === g.label ? 'Copied ✓' : 'Copy all (PID + link)'}</button>
-              {g.unusedCount ? <button className="btn danger" disabled={busy} onClick={() => delUnused(g)}
-                title="Delete every link in this group that no participant has started yet">Delete {g.unusedCount} unused</button> : null}
+              {g.unusedCount ? <button className="btn" disabled={busy} onClick={() => archiveUnused(g)}
+                title="Archive every unused link in this group (kept & restorable; never touches links a participant has started)">Archive {g.unusedCount} unused</button> : null}
             </div>
             <div className="kv kv-scroll" style={{ gridTemplateColumns: 'max-content 1fr max-content', maxHeight: 320 }}>
               {g.links.map((l) => [
                 <b key={l.pid + 'k'} title={l.used ? 'A participant has started this link' : 'Unused — no participant yet'}>
                   {l.pid}{l.used ? <span className="muted" style={{ fontWeight: 400 }}> ·&nbsp;in&nbsp;use</span> : ''}</b>,
                 <span key={l.pid + 'v'}><a href={l.link} target="_blank" rel="noreferrer">{l.link}</a></span>,
-                <button key={l.pid + 'd'} className="link-del" disabled={busy} onClick={() => delOne(l)}
-                  title={l.used ? 'Delete this link (it has participant data)' : 'Delete this unused link'}>×</button>,
+                <button key={l.pid + 'd'} className="link-del" disabled={busy} onClick={() => archiveOne(l)}
+                  title="Remove this link from the list — its data is KEPT (archived) and restorable">×</button>,
               ])}
             </div>
           </div>
         ))}
+      {archivedLinks.length > 0 && (
+        <div className="panel" style={{ marginBottom: 14, marginTop: 18 }}>
+          <h3>{archivedLinks.length} archived link{archivedLinks.length > 1 ? 's' : ''} <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>· hidden from the active list, data kept</span></h3>
+          <p className="muted" style={{ marginTop: 0 }}>Archiving a link only labels it — nothing is lost. Restore brings it back; "Delete data" is the only action that permanently removes the participant's data, and it cannot be undone.</p>
+          <div className="kv kv-scroll" style={{ gridTemplateColumns: 'max-content 1fr max-content max-content', maxHeight: 320 }}>
+            {archivedLinks.map((l) => [
+              <b key={l.pid + 'ak'} title={(l.used ? 'Has participant data · ' : 'Unused · ') + (l.archivedAt ? 'archived ' + fmt(l.archivedAt) : 'archived')}>
+                {l.pid}{l.used ? <span className="muted" style={{ fontWeight: 400 }}> ·&nbsp;has&nbsp;data</span> : ''}</b>,
+              <span key={l.pid + 'al'} className="muted" style={{ fontSize: 12 }}>{l.label}</span>,
+              <button key={l.pid + 'ar'} className="btn" disabled={busy} onClick={() => restoreOne(l)} title="Bring this link back into the active list">Restore</button>,
+              <button key={l.pid + 'ap'} className="btn danger" disabled={busy} onClick={() => purgeOne(l)}
+                title="Permanently delete this session and its transcript — cannot be undone">Delete data</button>,
+            ])}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

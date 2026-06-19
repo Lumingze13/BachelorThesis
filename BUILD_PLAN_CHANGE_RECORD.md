@@ -650,6 +650,20 @@ The matching `docs/Build_Plan_v5.4_to_code_change_record_and_suggestions.docx` c
   any later card block get stripped to plain chat (with a gentle steer if the block was the whole message).
   Continued conversation is unaffected. Verified on gpt-5.1 (direct + reflective: 0 extra sets across repeated
   "give me different ones", chat intact) and covered by a stub-LLM regression test in `phaseb_opening_test`.
+- **§13b participant data is never deleted incidentally — soft archive + gated purge** [DEPLOYED]: deleting a
+  link/session used to HARD-delete the row (cascading its messages), so a misclick on a "used" link, or the
+  bulk "delete unused", could permanently destroy data. Data is now removed ONLY by a deliberate two-step.
+  Added a soft `archived_at` column (idempotent migration); `archiveSession`/`unarchiveSession` and an
+  `archived` filter on `listSessions`; routes `POST /api/admin/sessions/:id/archive` + `/unarchive`. All
+  "delete link" UI (Recruit per-link ×, the bulk button — now "Archive N unused" — and the Sessions-tab
+  button) now ARCHIVE: the row leaves the active list but keeps every byte and is restorable. The hard
+  `DELETE` route is gated server-side to **archived rows only** (409 otherwise), and is surfaced in the UI
+  solely as a separate "Delete data" button on archived rows behind a cannot-be-undone confirm — so nothing,
+  anywhere, removes a session except that explicit click. PID sequencing still counts archived links (no
+  reuse). `archivedAt` rides in the reconstructed meta + exports (archived data still exports). No automatic
+  or scheduled deletion exists; the messages FK cascade only fires on the gated manual purge. Verified
+  end-to-end (route guard refuses an un-archived delete, archive hides/keeps, restore returns, purge removes)
+  and covered by `db_test`.
 - **§11 stage-C VOICE MIRRORING — main-only per-turn reminder** [DEPLOYED]: teammates reported the future
   self had stopped matching their all-lowercase texting style. Reproduced on gpt-5.1: against an all-lowercase
   casual user ("heyy hows the money honestly") the future self replied in fully capitalised, polished prose

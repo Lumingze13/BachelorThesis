@@ -430,3 +430,14 @@ For Andrea's recommendation-arm RQ the five cards must be a single fixed stimulu
 **presents them exactly once**: the participant can keep talking with the guide (compare the five, dig
 deeper, decide), but a second card set is never generated — the original five remain. Enforced both in
 the prompt and as a hard server-side guarantee, identically across the direct and reflective arms.
+
+### 8.9 Participant data is never deleted by accident (data integrity)
+
+Collected data can now only be lost by a single, deliberate action. **Removing a link from the admin
+lists no longer deletes anything** — it *archives* (labels) the row, which leaves the active list but
+keeps every byte and can be restored at any time. The previous behaviour hard-deleted the session and its
+full transcript (and the bulk "delete unused" / a misclick on a started link could destroy data). Now the
+only way data actually disappears is a separate **"Delete data"** action, which the server permits **only
+on an already-archived row** and which warns it cannot be undone. There is no automatic, scheduled, or
+incidental deletion anywhere; archived runs still appear in exports (flagged), so nothing silently drops
+out of the dataset.
