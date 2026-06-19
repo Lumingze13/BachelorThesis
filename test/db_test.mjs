@@ -6,7 +6,7 @@ import assert from 'node:assert';
 import { dbEnabled, initSchema, closePool } from '../lib/db.js';
 import {
   createSession, saveSession, getSessionRow, getMessages,
-  listSessions, deleteSession, reconstructStudy, exportStudies,
+  listSessions, deleteSession, reconstructStudy, exportStudies, claimSessionForRun,
 } from '../lib/sessions.js';
 
 if (!dbEnabled) {
@@ -64,6 +64,29 @@ assert.equal(await deleteSession(id), true, 'delete returns true');
 assert.equal(await getSessionRow(id), null, 'row gone after delete');
 assert.equal((await getMessages(id)).length, 0, 'messages cascade-deleted');
 console.log('✓ delete cascades to messages');
+
+// Claim/fork: reopening a used participant link must preserve the earlier run by
+// forking a new sibling row under the same link identity — never overwrite it.
+const link = await createSession({ condition: 'baseline', rec: 'reflective', study: 'andrea', pid: 'TEST_PID', recruiter: 'Thy' });
+const firstClaim = await claimSessionForRun(link.id, {});
+assert.equal(firstClaim.id, link.id, 'pristine link → claim reuses the same row');
+assert.equal(firstClaim.forked, false, 'pristine link → not forked');
+await saveSession(link.id, { profile: { name: 'First' }, phaseB: { career: 'Teacher' }, finalize: true });
+const reopen = await claimSessionForRun(link.id, {});
+assert.notEqual(reopen.id, link.id, 'used link → claim forks a NEW row');
+assert.equal(reopen.forked, true, 'used link → forked flag set');
+const original = await getSessionRow(link.id);
+assert.equal(original.phase_b.career, 'Teacher', 'original run data preserved after reopen');
+assert.equal(original.status, 'completed', 'original run still completed');
+const fork = await getSessionRow(reopen.id);
+assert.equal(fork.pid, 'TEST_PID', 'fork shares the link pid (same link)');
+assert.equal(fork.condition, 'baseline', 'fork preserves condition');
+assert.equal(fork.rec, 'reflective', 'fork preserves rec');
+assert.equal(fork.recruiter, 'Thy', 'fork preserves recruiter');
+assert.equal(fork.status, 'started', 'fork starts a clean run');
+await deleteSession(link.id);
+await deleteSession(reopen.id);
+console.log('✓ claim/fork preserves the prior run under the same link (two records, one pid)');
 
 await closePool();
 console.log('\nDB INTEGRATION TESTS PASSED ✅');

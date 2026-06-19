@@ -83,6 +83,33 @@ function apiSaveSession(id, partial) {
     body: JSON.stringify(partial)
   }).catch(() => {});
 }
+async function apiClaimSession(id, {
+  condition,
+  rec,
+  study,
+  pid
+}) {
+  if (!id) return id;
+  try {
+    const r = await fetch(PERSIST_BASE + '/api/sessions/' + id + '/claim', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        condition,
+        rec,
+        study,
+        pid
+      })
+    });
+    if (!r.ok) return id;
+    const d = await r.json().catch(() => ({}));
+    return d && d.id ? d.id : id;
+  } catch (e) {
+    return id;
+  }
+}
 function phaseBNotesFrom(pb) {
   if (!pb || !pb.transcript) return '';
   const userTurns = pb.transcript.filter(t => t.role === 'user').map(t => `- ${t.text}`);
@@ -198,15 +225,26 @@ function App() {
     }
   }, []);
   const beginAfterConsent = () => {
-    if (!studyId.current && !preview) {
-      apiCreateSession({
-        condition,
-        rec,
-        study,
-        pid
-      }).then(id => {
-        studyId.current = id;
-      });
+    if (!preview) {
+      if (!studyId.current) {
+        apiCreateSession({
+          condition,
+          rec,
+          study,
+          pid
+        }).then(id => {
+          studyId.current = id;
+        });
+      } else {
+        apiClaimSession(studyId.current, {
+          condition,
+          rec,
+          study,
+          pid
+        }).then(id => {
+          studyId.current = id;
+        });
+      }
     }
     setScreen('avatar');
   };

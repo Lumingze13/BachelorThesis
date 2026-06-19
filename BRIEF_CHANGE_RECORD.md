@@ -411,3 +411,22 @@ self was replying in clean, capitalised prose regardless. It is now re-asserted 
 Phase-C turn and verified bidirectional (lowercase in → lowercase out; formal in → formal out). The
 **BASELINE** control is deliberately left without any style instruction, so this *strengthens* the
 intended main-vs-baseline difference rather than confounding it. No measurement or instrument change.
+
+### 8.7 Reopening a participant link no longer overwrites the earlier run (data integrity)
+
+A participant link pins one session id, and **reopening the same link to run it again was overwriting
+the previous run's record** in the database — the earlier result vanished. This is now fixed: when a
+link whose row already holds a run is reopened for a fresh run, the server keeps the old record intact
+and writes the new run to a **new sibling record under the same participant id** (same study cell,
+condition, rec-arm and recruiter). Two (or more) runs of one link are all retained and grouped together
+for the researcher. We err toward keeping data. The legitimate resume flows (a refresh mid-run, the
+admin resume link) still continue the *same* record as before.
+
+### 8.8 Stage-B career cards are a fixed stimulus — shown once (Andrea's RQ)
+
+Previously, if a participant kept asking the recommendation guide for more options after seeing the five
+career cards, the guide would hand back a **new, updated set of five**, changing the stimulus mid-task.
+For Andrea's recommendation-arm RQ the five cards must be a single fixed stimulus, so the platform now
+**presents them exactly once**: the participant can keep talking with the guide (compare the five, dig
+deeper, decide), but a second card set is never generated — the original five remain. Enforced both in
+the prompt and as a hard server-side guarantee, identically across the direct and reflective arms.
