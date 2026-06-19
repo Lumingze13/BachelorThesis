@@ -69,6 +69,23 @@ function apiSaveSession(id, partial) {
   }).catch(() => {});
 }
 
+// Claim a pinned participant-link row for a fresh run. The server hands back the
+// SAME id if the row is still unused, or a NEW forked sibling id if the link was
+// already completed/started before — so reopening the same link can never
+// overwrite the earlier run. Fail-safe: keep the pinned id if the call fails.
+async function apiClaimSession(id, { condition, rec, study, pid }) {
+  if (!id) return id;
+  try {
+    const r = await fetch(PERSIST_BASE + '/api/sessions/' + id + '/claim', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ condition, rec, study, pid }),
+    });
+    if (!r.ok) return id;
+    const d = await r.json().catch(() => ({}));
+    return d && d.id ? d.id : id;
+  } catch (e) { return id; }
+}
+
 /** Condense the Phase-B dialogue into carry-over notes for the MAIN role-play. */
 function phaseBNotesFrom(pb) {
   if (!pb || !pb.transcript) return '';
@@ -194,8 +211,16 @@ function App() {
   // consent). Admin-created links already carry an id; never create twice.
   // Preview runs never create a row at all.
   const beginAfterConsent = () => {
-    if (!studyId.current && !preview) {
-      apiCreateSession({ condition, rec, study, pid }).then((id) => { studyId.current = id; });
+    if (!preview) {
+      if (!studyId.current) {
+        apiCreateSession({ condition, rec, study, pid }).then((id) => { studyId.current = id; });
+      } else {
+        // Pinned admin link: claim its row for this run. If the link was already
+        // used, the server forks a new sibling row (same pid) so the earlier run
+        // is preserved instead of overwritten. Resolves well before the first
+        // write (two screens away: avatar → pre-survey).
+        apiClaimSession(studyId.current, { condition, rec, study, pid }).then((id) => { studyId.current = id; });
+      }
     }
     setScreen('avatar');
   };

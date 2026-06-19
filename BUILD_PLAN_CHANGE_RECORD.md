@@ -630,6 +630,26 @@ The matching `docs/Build_Plan_v5.4_to_code_change_record_and_suggestions.docx` c
     still fires after the cards every time. Also A/B-tested the trailer order: appending the voice reminder
     after brevity does NOT loosen length — MAIN means stayed ~50–65 words (PR #27's band) with mirroring
     intact, so the ordering was left as-is.
+- **§13a participant-link data preservation — claim/fork on reuse** [DEPLOYED]: a participant link pins one
+  session id (`/?session=<id>&…`). Reopening the same link adopted that same row, so a fresh run's
+  incremental PATCHes OVERWROTE the earlier run stored there — the prior result silently vanished from the
+  DB. (The in-app "↻ Restart" button was already safe: it nulls `studyId` and creates a new row.) Fix: a new
+  `POST /api/sessions/:id/claim` (lib/study_routes.js + `claimSessionForRun` in lib/sessions.js) is called at
+  consent — it returns the SAME id while the row is still pristine (admin just minted it), but FORKS a new
+  sibling row sharing the link identity (pid/study/condition/rec/recruiter) once the row already holds a run.
+  So the earlier run is preserved and a reopen writes to a fresh record; both live under the same pid ("two
+  records under one link"). Fail-safe: keeps the pinned id if the call errors. Claim fires two screens before
+  the first write (avatar → pre-survey), so no race. Resume paths (admin `?resume=1`, localStorage
+  resume-choice "Continue") are untouched — they intentionally continue the SAME row. Verified end-to-end on
+  Postgres + covered by `db_test`.
+- **§7/§8 stage-B cards are delivered ONCE (Andrea's RQ)** [DEPLOYED]: after the five cards appeared, asking
+  for more/different options made the guide emit an UPDATED five-card block, replacing the stimulus. Now the
+  five are fixed once shown: the model is told to present the block once and, if asked for more, keep chatting
+  about the same five (no second JSON block); and the server GUARANTEES it — a per-session `cardsDelivered`
+  flag (set on the direct opening, the first /api/chat delivery, or detected from a resumed transcript) makes
+  any later card block get stripped to plain chat (with a gentle steer if the block was the whole message).
+  Continued conversation is unaffected. Verified on gpt-5.1 (direct + reflective: 0 extra sets across repeated
+  "give me different ones", chat intact) and covered by a stub-LLM regression test in `phaseb_opening_test`.
 - **§11 stage-C VOICE MIRRORING — main-only per-turn reminder** [DEPLOYED]: teammates reported the future
   self had stopped matching their all-lowercase texting style. Reproduced on gpt-5.1: against an all-lowercase
   casual user ("heyy hows the money honestly") the future self replied in fully capitalised, polished prose

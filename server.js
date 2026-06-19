@@ -20,7 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import { pickPhaseBPrompt, buildSystemPrompt, buildBaselinePrompt } from './lib/prompt.js';
-import { extractRecommendations } from './lib/recs.js';
+import { extractRecommendations, PHASE_B_REC_FALLBACK } from './lib/recs.js';
 import { dbEnabled, initSchema, probe } from './lib/db.js';
 import { mountStudyRoutes } from './lib/study_routes.js';
 import { mountAdminRoutes } from './lib/admin_routes.js';
@@ -198,6 +198,17 @@ app.get(['/healthz', '/api/health'], async (req, res) => {
 
 // --- Phase B: shared recommendation guide ---------------------------------
 
+// A delivered five-card set is folded into the saved transcript as enumerated
+// lines ("1. Title — why … Path: …"). Detect that so a RESUMED phase-B session
+// knows the cards already went out and won't regenerate them.
+function transcriptHasCards(transcript) {
+  return (transcript || []).some((m) => {
+    if (!m || (m.role !== 'guide' && m.role !== 'assistant')) return false;
+    const enumerated = (m.text || '').split('\n').filter((l) => /^\s*[1-5]\.\s+\S/.test(l));
+    return enumerated.length >= 3;
+  });
+}
+
 app.post('/api/phase-b/session', async (req, res) => {
   try {
     // `rec` (direct | reflective | guide) selects the Phase-B prompt (Build Plan
@@ -211,7 +222,12 @@ app.post('/api/phase-b/session', async (req, res) => {
         .filter((m) => m && typeof m.text === 'string' && m.text.trim())
         .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
       const sessionId = crypto.randomUUID();
-      sessions.set(sessionId, { phase: 'b', systemPrompt: pickPhaseBPrompt(rec, profileData), messages });
+      // If the saved transcript already shows the five cards, the set is locked —
+      // a resumed run must not regenerate them (Andrea's RQ: cards appear once).
+      sessions.set(sessionId, {
+        phase: 'b', systemPrompt: pickPhaseBPrompt(rec, profileData), messages,
+        cardsDelivered: transcriptHasCards(priorTranscript),
+      });
       return res.json({ sessionId, opening: null, resumed: true });
     }
     const out = await openSession('b', pickPhaseBPrompt(rec, profileData), PHASE_B_NUDGE);
@@ -220,6 +236,9 @@ app.post('/api/phase-b/session', async (req, res) => {
     // leaks into the first bubble (only /api/chat extracted it before). The
     // reflective arm opens with a question, so this is a no-op there.
     const { clean, recommendations } = extractRecommendations(out.opening);
+    // Once the five cards are out, lock the set: later turns may keep chatting but
+    // must not produce a NEW/updated five (Andrea's RQ keeps the stimulus fixed).
+    if (recommendations) { const s = sessions.get(out.sessionId); if (s) s.cardsDelivered = true; }
     res.json({ sessionId: out.sessionId, opening: clean, recommendations });
   } catch (err) {
     console.error('POST /api/phase-b/session failed:', err?.message || err);
@@ -312,6 +331,18 @@ app.post('/api/chat', async (req, res) => {
     // Phase B proposes five career directions as a structured block -> cards.
     if (session.phase === 'b') {
       const { clean, recommendations } = extractRecommendations(reply);
+      if (recommendations && session.cardsDelivered) {
+        // The five are shown ONCE (Andrea's RQ keeps the stimulus fixed). The
+        // student can keep chatting, but a regenerated/updated set is dropped —
+        // return only the conversational text, never new cards. Avoid the
+        // "here are five directions…" lead-in fallback when the block was the
+        // whole message; steer back to the existing five instead.
+        const prose = (clean && clean !== PHASE_B_REC_FALLBACK)
+          ? clean
+          : "Let's stay with the five directions we already landed on — which of them pulls at you most, or what would you like to dig into about them?";
+        return res.json({ reply: prose, recommendations: null });
+      }
+      if (recommendations) session.cardsDelivered = true;
       return res.json({ reply: clean, recommendations });
     }
     res.json({ reply });

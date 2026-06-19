@@ -83,6 +83,23 @@ try {
   } else {
     fail(`reflective opening unexpectedly altered: cards=${rf.recommendations ? rf.recommendations.length : 'null'}`);
   }
+
+  // Card-once guard (Andrea's RQ): the five cards are the fixed stimulus. After
+  // the direct arm has delivered them in its opening, a LATER turn that also
+  // emits a card block (the stub always does) must be suppressed — the
+  // participant can keep chatting, but never gets a new/updated set, and the raw
+  // JSON never leaks. The first set is unaffected (asserted above).
+  const chatR = await fetch(base + '/api/chat', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ sessionId: d.sessionId, message: 'can you give me five different ones?' }),
+  });
+  const chat = await chatR.json();
+  const chatLeak = /recommendations":\s*\[/.test(chat.reply || '');
+  if (chat.recommendations == null && !chatLeak && (chat.reply || '').trim()) {
+    console.log('✓ after the five cards, a regenerated set is suppressed (chat continues, no new cards, no JSON leak)');
+  } else {
+    fail(`card-once guard failed: cards=${chat.recommendations ? chat.recommendations.length : 'null'}, rawJSON=${chatLeak}, reply=${JSON.stringify((chat.reply || '').slice(0, 100))}`);
+  }
 } catch (e) {
   fail('unexpected error: ' + (e && e.message));
 } finally {
