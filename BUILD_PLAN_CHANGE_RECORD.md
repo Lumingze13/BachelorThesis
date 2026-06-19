@@ -621,6 +621,15 @@ The matching `docs/Build_Plan_v5.4_to_code_change_record_and_suggestions.docx` c
   hold the full pre-survey profile, so proceed to the cards." Re-tested with the same vague answers: 3–4
   every run, never 5, and the internal count is no longer announced (the earlier wording had leaked
   "question 2 of 4"). DIRECT and GUIDE arms untouched.
+  - **Follow-up audit refinement** [DEPLOYED]: the first cap wording made gpt-5.1 *number* its questions
+    ("First question:", "Fourth (and last) question:") on vague answers — mechanical, and at odds with the
+    reflective arm's warm "never feel like a survey" tone. Tightened to forbid surfacing the count or any
+    ordinal label at all ("no 'first question', no 'one last question'"), and scoped the cap explicitly to
+    the STEP 2 reflective questions so the STEP 6 location step is untouched. Re-verified on gpt-5.1:
+    substantive answers settle at 3, vague at ≤4, zero ordinal leaks across runs, and the location step
+    still fires after the cards every time. Also A/B-tested the trailer order: appending the voice reminder
+    after brevity does NOT loosen length — MAIN means stayed ~50–65 words (PR #27's band) with mirroring
+    intact, so the ordering was left as-is.
 - **§11 stage-C VOICE MIRRORING — main-only per-turn reminder** [DEPLOYED]: teammates reported the future
   self had stopped matching their all-lowercase texting style. Reproduced on gpt-5.1: against an all-lowercase
   casual user ("heyy hows the money honestly") the future self replied in fully capitalised, polished prose
